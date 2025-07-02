@@ -26,18 +26,31 @@ public class ContentDrawer {
         this.tocItems = tocItems;
     }
 
-    public Object[] drawSection(PdfDocument document, PdfDocument.Page page, String sectionTitle, String sectionContent, float yPos) {
-        int currentPageNumber = document.getPages().size();
-        tocItems.add(new TocItem(sectionTitle, currentPageNumber, yPos));
-
-        Object[] result = drawSectionTitle(document, page, sectionTitle, yPos);
-        PdfDocument.Page currentPage = (PdfDocument.Page) result[0];
-        float currentY = (float) result[1];
+    public Object[] drawSection(PdfDocument document, PdfDocument.Page page, String sectionTitle, String sectionContent, float yPos, int currentPageNum, boolean includeSectionTitle) {
+        // Only draw section title if requested (to avoid duplication)
+        Object[] result = new Object[]{page, yPos, currentPageNum};
+        float currentY = yPos;
+        PdfDocument.Page currentPage = page;
+        
+        if (includeSectionTitle) {
+            result = drawSectionTitle(document, currentPage, sectionTitle, currentY);
+            currentPage = (PdfDocument.Page) result[0];
+            currentY = (float) result[1];
+        }
 
         String[] contentBlocks = sectionContent.split("\n\\s*\n");
         for (String block : contentBlocks) {
             if (block.trim().isEmpty()) continue;
             String trimmedBlock = block.trim();
+            
+            // Skip if this block is just the section title repeated
+            if (trimmedBlock.equals(sectionTitle) || 
+                trimmedBlock.equals("# " + sectionTitle) ||
+                trimmedBlock.equals("## " + sectionTitle) ||
+                trimmedBlock.equals("### " + sectionTitle)) {
+                continue;
+            }
+            
             if (trimmedBlock.startsWith("[[TABLE")) {
                 result = drawTable(document, currentPage, trimmedBlock, currentY);
             } else if (trimmedBlock.startsWith("[[CHART")) {
@@ -47,8 +60,16 @@ public class ContentDrawer {
             }
             currentPage = (PdfDocument.Page) result[0];
             currentY = (float) result[1];
+            if (result.length > 2) {
+                currentPageNum = (int) result[2];
+            }
         }
-        return new Object[]{currentPage, currentY};
+        return new Object[]{currentPage, currentY, currentPageNum};
+    }
+
+    // Legacy method signature for compatibility
+    public Object[] drawSection(PdfDocument document, PdfDocument.Page page, String sectionTitle, String sectionContent, float yPos) {
+        return drawSection(document, page, sectionTitle, sectionContent, yPos, document.getPages().size(), true);
     }
 
     private Object[] drawSectionTitle(PdfDocument document, PdfDocument.Page page, String title, float yPos) {
@@ -71,15 +92,31 @@ public class ContentDrawer {
         Canvas canvas = page.getCanvas();
         Paint paintForBlock;
         boolean isHeading = false;
+        int currentPageNum = document.getPages().size();
 
+        // Check if this is a heading and process accordingly
         if (text.startsWith("###")) {
-            paintForBlock = paints.getH3Paint(); text = text.substring(3).trim(); isHeading = true;
+            paintForBlock = paints.getH3Paint(); 
+            text = text.substring(3).trim(); 
+            isHeading = true;
         } else if (text.startsWith("##")) {
-            paintForBlock = paints.getH2Paint(); text = text.substring(2).trim(); isHeading = true;
+            paintForBlock = paints.getH2Paint(); 
+            text = text.substring(2).trim(); 
+            isHeading = true;
         } else if (text.startsWith("#")) {
-            paintForBlock = paints.getH1Paint(); text = text.substring(1).trim(); isHeading = true;
+            paintForBlock = paints.getH1Paint(); 
+            text = text.substring(1).trim(); 
+            isHeading = true;
         } else {
             paintForBlock = paints.getTextPaint();
+        }
+        
+        // For headings, consider starting on a new page if we're not at the top
+        if (isHeading && yPos > PaintManager.MARGIN + 100) {
+            page = finishAndStartNewPage(document, page);
+            canvas = page.getCanvas();
+            yPos = PaintManager.MARGIN;
+            currentPageNum = document.getPages().size();
         }
         
         yPos += isHeading ? PaintManager.HEADING_TOP_MARGIN : 0;
@@ -110,6 +147,7 @@ public class ContentDrawer {
                      page = finishAndStartNewPage(document, page);
                      canvas = page.getCanvas();
                      yPos = PaintManager.MARGIN;
+                     currentPageNum = document.getPages().size();
                 }
                 if (lineIdx == 0 && !prefix.isEmpty()) {
                     canvas.drawText(prefix, PaintManager.MARGIN, yPos - paintForBlock.ascent(), paintForBlock);
@@ -119,15 +157,16 @@ public class ContentDrawer {
             }
         }
          yPos += PaintManager.PARAGRAPH_SPACING;
-        return new Object[]{page, yPos};
+        return new Object[]{page, yPos, currentPageNum};
     }
 
     private Object[] drawChart(PdfDocument document, PdfDocument.Page page, String chartString, float yPos) {
         Canvas canvas = page.getCanvas();
+        int currentPageNum = document.getPages().size();
         try {
             chartString = chartString.replace("[[CHART|", "").replace("]]", "");
             String[] parts = chartString.split("\\|");
-            if (parts.length < 4) return new Object[]{page, yPos};
+            if (parts.length < 4) return new Object[]{page, yPos, currentPageNum};
 
             String type = parts[0].trim().toLowerCase();
             String title = parts[1].trim();
@@ -137,6 +176,7 @@ public class ContentDrawer {
                 page = finishAndStartNewPage(document, page);
                 canvas = page.getCanvas();
                 yPos = PaintManager.MARGIN;
+                currentPageNum = document.getPages().size();
             }
             
             yPos += PaintManager.VISUAL_TITLE_MARGIN;
@@ -166,7 +206,7 @@ public class ContentDrawer {
         } catch (Exception e) {
             Log.e("ContentDrawer", "Failed to parse or draw chart: " + chartString, e);
         }
-        return new Object[]{page, yPos};
+        return new Object[]{page, yPos, currentPageNum};
     }
 
     private void drawBarChart(Canvas canvas, String[] parts, float yPos) {

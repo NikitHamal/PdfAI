@@ -37,26 +37,13 @@ public class PdfGenerator {
             // 1. Draw Cover Page
             drawCoverPage(document, pdfTitle);
 
-            // 2. Reserve a page for TOC. We will draw on it later.
-            PdfDocument.PageInfo tocPageInfo = new PdfDocument.PageInfo.Builder(PaintManager.PAGE_WIDTH, PaintManager.PAGE_HEIGHT, 2).create();
-            PdfDocument.Page tocPage = document.startPage(tocPageInfo);
-            // We finish it empty for now. We'll draw on it later.
-            document.finishPage(tocPage);
-
-            // 3. Draw content pages, starting from page 3
+            // 2. Draw content pages first to populate TOC items, starting from page 3
             drawContentPages(document, outlineData, sectionsContent, contentDrawer, 3);
 
-            // 4. Now, draw the actual Table of Contents on the reserved page (page 2)
-            // Note: This is a simplified approach. True page insertion is complex.
-            // We are essentially creating a placeholder and then drawing on it.
-            // A more robust solution might involve creating two PDFs and merging.
-            // Start the TOC page again to get its Canvas
-            PdfDocument.PageInfo existingTocPageInfo = new PdfDocument.PageInfo.Builder(PaintManager.PAGE_WIDTH, PaintManager.PAGE_HEIGHT, 2).create();
-            PdfDocument.Page existingTocPage = document.startPage(existingTocPageInfo);
-            drawTableOfContents(existingTocPage.getCanvas()); // Get canvas of page at index 1 (page 2)
-            document.finishPage(existingTocPage); // Finish the TOC page after drawing
+            // 3. Now draw the Table of Contents on page 2
+            drawTableOfContentsPage(document);
 
-            // 5. Save the final document
+            // 4. Save the final document
             savePdf(document, pdfTitle, callback);
 
         } catch (Exception e) {
@@ -73,47 +60,72 @@ public class PdfGenerator {
         PdfDocument.Page page = document.startPage(pageInfo);
         Canvas canvas = page.getCanvas();
         Paint titlePaint = paintManager.getTitlePaint();
-        float yPosition = PaintManager.PAGE_HEIGHT / 2.5f; // Centered vertically
-
-        ContentDrawer.drawMultiLineText(canvas, title, PaintManager.PAGE_WIDTH / 2f, yPosition, titlePaint, PaintManager.CONTENT_WIDTH - 20);
+        
+        // Better title positioning - ensure it's well within page bounds
+        float yPosition = PaintManager.PAGE_HEIGHT / 3f; // Higher up on the page
+        float maxWidth = PaintManager.CONTENT_WIDTH - 40; // Extra margin for safety
+        
+        ContentDrawer.drawMultiLineText(canvas, title, PaintManager.PAGE_WIDTH / 2f, yPosition, titlePaint, maxWidth);
         document.finishPage(page);
     }
 
     private void drawContentPages(PdfDocument document, OutlineData outlineData, List<String> sectionsContent, ContentDrawer contentDrawer, int startingPageNum) {
         int currentPageNumber = startingPageNum;
-        PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(PaintManager.PAGE_WIDTH, PaintManager.PAGE_HEIGHT, currentPageNumber).create();
-        PdfDocument.Page currentPage = document.startPage(pageInfo);
+        PdfDocument.Page currentPage = null;
         float yPosition = PaintManager.MARGIN;
 
         for (int i = 0; i < outlineData.getSections().size(); i++) {
             String sectionTitle = outlineData.getSections().get(i);
             String sectionContent = sectionsContent.get(i);
 
-            Object[] result = contentDrawer.drawSection(document, currentPage, sectionTitle, sectionContent, yPosition);
+            // Start each section on a new page
+            if (currentPage != null) {
+                contentDrawer.drawPageNumber(currentPage.getCanvas(), currentPageNumber - 1);
+                document.finishPage(currentPage);
+            }
+            
+            // Create new page for each section
+            PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(PaintManager.PAGE_WIDTH, PaintManager.PAGE_HEIGHT, currentPageNumber).create();
+            currentPage = document.startPage(pageInfo);
+            yPosition = PaintManager.MARGIN;
+            
+            // Add TOC entry for this section
+            tocItems.add(new TocItem(sectionTitle, currentPageNumber, yPosition));
+
+            Object[] result = contentDrawer.drawSection(document, currentPage, sectionTitle, sectionContent, yPosition, currentPageNumber, false);
             currentPage = (PdfDocument.Page) result[0];
             yPosition = (float) result[1];
+            currentPageNumber = (int) result[2];
         }
 
         // Finish the last content page
-        contentDrawer.drawPageNumber(currentPage.getCanvas(), document.getPages().size());
-        document.finishPage(currentPage);
+        if (currentPage != null) {
+            contentDrawer.drawPageNumber(currentPage.getCanvas(), currentPageNumber - 1);
+            document.finishPage(currentPage);
+        }
+    }
+
+    private void drawTableOfContentsPage(PdfDocument document) {
+        PdfDocument.PageInfo tocPageInfo = new PdfDocument.PageInfo.Builder(PaintManager.PAGE_WIDTH, PaintManager.PAGE_HEIGHT, 2).create();
+        PdfDocument.Page tocPage = document.startPage(tocPageInfo);
+        drawTableOfContents(tocPage.getCanvas());
+        document.finishPage(tocPage);
     }
 
     private void drawTableOfContents(Canvas canvas) {
-        float yPosition = PaintManager.MARGIN;
+        float yPosition = PaintManager.MARGIN + 30;
 
         // Draw TOC Title
-        canvas.drawText("Table of Contents", PaintManager.PAGE_WIDTH / 2f, yPosition + 20, paintManager.getTocTitlePaint());
-        yPosition += 80;
+        canvas.drawText("Table of Contents", PaintManager.PAGE_WIDTH / 2f, yPosition, paintManager.getTocTitlePaint());
+        yPosition += 60;
 
         Paint tocTextPaint = paintManager.getTocTextPaint();
         Paint tocNumberPaint = paintManager.getTocNumberPaint();
         float lineHeight = tocTextPaint.descent() - tocTextPaint.ascent();
 
         for (TocItem item : tocItems) {
-            if (yPosition > PaintManager.PAGE_HEIGHT - PaintManager.MARGIN) {
-                // TOC is too long for one page, which is an edge case not handled here.
-                // For simplicity, we assume the TOC fits on a single page.
+            if (yPosition > PaintManager.PAGE_HEIGHT - PaintManager.MARGIN - 50) {
+                // TOC is too long for one page
                 break;
             }
 
@@ -121,11 +133,14 @@ public class PdfGenerator {
             float numberWidth = tocNumberPaint.measureText(pageNumStr);
 
             // Draw dotted line
-            String truncatedTitle = ContentDrawer.truncateText(item.getTitle(), tocTextPaint, PaintManager.CONTENT_WIDTH - numberWidth - 20);
+            String truncatedTitle = ContentDrawer.truncateText(item.getTitle(), tocTextPaint, PaintManager.CONTENT_WIDTH - numberWidth - 30);
             float titleWidth = tocTextPaint.measureText(truncatedTitle);
-            float startX = PaintManager.MARGIN + titleWidth + 5;
-            float endX = PaintManager.PAGE_WIDTH - PaintManager.MARGIN - numberWidth - 5;
-            canvas.drawPath(ContentDrawer.createDottedLinePath(startX, endX, yPosition - (lineHeight / 4)), paintManager.getDottedLinePaint());
+            float startX = PaintManager.MARGIN + titleWidth + 10;
+            float endX = PaintManager.PAGE_WIDTH - PaintManager.MARGIN - numberWidth - 10;
+            
+            if (startX < endX) {
+                canvas.drawPath(ContentDrawer.createDottedLinePath(startX, endX, yPosition - (lineHeight / 4)), paintManager.getDottedLinePaint());
+            }
 
             // Draw section title
             canvas.drawText(truncatedTitle, PaintManager.MARGIN, yPosition, tocTextPaint);
@@ -133,8 +148,9 @@ public class PdfGenerator {
             // Draw page number, right-aligned
             canvas.drawText(pageNumStr, PaintManager.PAGE_WIDTH - PaintManager.MARGIN, yPosition, tocNumberPaint);
 
-            yPosition += lineHeight * 1.8f; // Increase spacing for readability
+            yPosition += lineHeight * 2.0f; // Increased spacing for better readability
         }
+        
         // Draw page number on TOC page
         paintManager.getPageNumberPaint().setTextAlign(Paint.Align.CENTER);
         canvas.drawText("2", PaintManager.PAGE_WIDTH / 2f, PaintManager.PAGE_HEIGHT - 20, paintManager.getPageNumberPaint());
