@@ -37,11 +37,11 @@ public class PdfGenerator {
             // 1. Draw Cover Page
             drawCoverPage(document, pdfTitle);
 
-            // 2. Draw content pages first to populate TOC items, starting from page 3
+            // 2. Draw content pages starting from page 3 to populate TOC items
             drawContentPages(document, outlineData, sectionsContent, contentDrawer, 3);
 
-            // 3. Now draw the Table of Contents on page 2
-            drawTableOfContentsPage(document);
+            // 3. Now draw the Table of Contents on page 2 with actual data
+            insertTableOfContentsPage(document);
 
             // 4. Save the final document
             savePdf(document, pdfTitle, callback);
@@ -61,15 +61,25 @@ public class PdfGenerator {
         Canvas canvas = page.getCanvas();
         Paint titlePaint = paintManager.getTitlePaint();
         
-        // Better title positioning - ensure it's well within page bounds
-        float yPosition = PaintManager.PAGE_HEIGHT / 3f; // Higher up on the page
-        float maxWidth = PaintManager.CONTENT_WIDTH - 40; // Extra margin for safety
+        // Better title positioning - center both horizontally and vertically
+        float centerX = PaintManager.PAGE_WIDTH / 2f;
+        float centerY = PaintManager.PAGE_HEIGHT / 2f;
+        float maxWidth = PaintManager.CONTENT_WIDTH - 80; // Extra margin for safety
         
-        ContentDrawer.drawMultiLineText(canvas, title, PaintManager.PAGE_WIDTH / 2f, yPosition, titlePaint, maxWidth);
+        // Split title into lines and center them vertically
+        List<String> titleLines = ContentDrawer.splitTextIntoLines(title, titlePaint, maxWidth);
+        float totalHeight = titleLines.size() * (titlePaint.descent() - titlePaint.ascent()) * PaintManager.LINE_HEIGHT_MULTIPLIER;
+        float startY = centerY - (totalHeight / 2) - titlePaint.ascent();
+        
+        for (String line : titleLines) {
+            canvas.drawText(line, centerX, startY, titlePaint);
+            startY += (titlePaint.descent() - titlePaint.ascent()) * PaintManager.LINE_HEIGHT_MULTIPLIER;
+        }
+        
         document.finishPage(page);
     }
 
-    private void drawContentPages(PdfDocument document, OutlineData outlineData, List<String> sectionsContent, ContentDrawer contentDrawer, int startingPageNum) {
+    private int drawContentPages(PdfDocument document, OutlineData outlineData, List<String> sectionsContent, ContentDrawer contentDrawer, int startingPageNum) {
         int currentPageNumber = startingPageNum;
         PdfDocument.Page currentPage = null;
         float yPosition = PaintManager.MARGIN;
@@ -78,18 +88,18 @@ public class PdfGenerator {
             String sectionTitle = outlineData.getSections().get(i);
             String sectionContent = sectionsContent.get(i);
 
-            // Start each section on a new page
+            // Start each main section on a new page
             if (currentPage != null) {
                 contentDrawer.drawPageNumber(currentPage.getCanvas(), currentPageNumber - 1);
                 document.finishPage(currentPage);
             }
             
-            // Create new page for each section
+            // Create new page for each main section
             PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(PaintManager.PAGE_WIDTH, PaintManager.PAGE_HEIGHT, currentPageNumber).create();
             currentPage = document.startPage(pageInfo);
             yPosition = PaintManager.MARGIN;
             
-            // Add TOC entry for this section
+            // Add TOC entry for this main section with actual page number
             tocItems.add(new TocItem(sectionTitle, currentPageNumber, yPosition));
 
             Object[] result = contentDrawer.drawSection(document, currentPage, sectionTitle, sectionContent, yPosition, currentPageNumber, false);
@@ -103,9 +113,12 @@ public class PdfGenerator {
             contentDrawer.drawPageNumber(currentPage.getCanvas(), currentPageNumber - 1);
             document.finishPage(currentPage);
         }
+        
+        return currentPageNumber - 1; // Return total pages used for content
     }
 
-    private void drawTableOfContentsPage(PdfDocument document) {
+    private void insertTableOfContentsPage(PdfDocument document) {
+        // Create the TOC page at position 2
         PdfDocument.PageInfo tocPageInfo = new PdfDocument.PageInfo.Builder(PaintManager.PAGE_WIDTH, PaintManager.PAGE_HEIGHT, 2).create();
         PdfDocument.Page tocPage = document.startPage(tocPageInfo);
         drawTableOfContents(tocPage.getCanvas());

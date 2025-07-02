@@ -111,13 +111,8 @@ public class ContentDrawer {
             paintForBlock = paints.getTextPaint();
         }
         
-        // For headings, consider starting on a new page if we're not at the top
-        if (isHeading && yPos > PaintManager.MARGIN + 100) {
-            page = finishAndStartNewPage(document, page);
-            canvas = page.getCanvas();
-            yPos = PaintManager.MARGIN;
-            currentPageNum = document.getPages().size();
-        }
+        // For headings, only start a new page if there's genuinely insufficient space
+        // (removed the automatic new page logic for headings since main sections already handle this)
         
         yPos += isHeading ? PaintManager.HEADING_TOP_MARGIN : 0;
 
