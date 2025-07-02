@@ -6,7 +6,6 @@ import android.graphics.DashPathEffect;
 import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.text.TextPaint;
-import androidx.core.content.res.ResourcesCompat;
 
 public class PaintManager {
 
@@ -35,9 +34,10 @@ public class PaintManager {
     private final int[] chartColors;
 
     public PaintManager(Context context) {
-        Typeface regularTypeface = ResourcesCompat.getFont(context, R.font.reg);
-        Typeface mediumTypeface = ResourcesCompat.getFont(context, R.font.med);
-        Typeface semiboldTypeface = ResourcesCompat.getFont(context, R.font.sem);
+        // Use system fonts instead of custom fonts to avoid potential crashes
+        Typeface regularTypeface = Typeface.DEFAULT;
+        Typeface mediumTypeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL);
+        Typeface semiboldTypeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD);
 
         // Cover Page and Section Title Paints
         titlePaint = new Paint();
