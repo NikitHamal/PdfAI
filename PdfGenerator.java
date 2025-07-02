@@ -34,16 +34,19 @@ public class PdfGenerator {
         ContentDrawer contentDrawer = new ContentDrawer(paintManager, tocItems);
 
         try {
-            // 1. Draw Cover Page
+            // 1. First pass: Collect TOC items by simulating page layout
+            collectTocItems(outlineData, sectionsContent);
+
+            // 2. Draw Cover Page (page 1)
             drawCoverPage(document, pdfTitle);
 
-            // 2. Draw content pages starting from page 3 to populate TOC items
+            // 3. Draw Table of Contents (page 2) with collected items
+            drawTableOfContentsPage(document);
+
+            // 4. Draw content pages starting from page 3
             drawContentPages(document, outlineData, sectionsContent, contentDrawer, 3);
 
-            // 3. Now draw the Table of Contents on page 2 with actual data
-            insertTableOfContentsPage(document);
-
-            // 4. Save the final document
+            // 5. Save the final document
             savePdf(document, pdfTitle, callback);
 
         } catch (Exception e) {
@@ -53,6 +56,81 @@ public class PdfGenerator {
                 document.close();
             }
         }
+    }
+
+    private void collectTocItems(OutlineData outlineData, List<String> sectionsContent) {
+        // Simulate page layout to collect accurate page numbers for TOC
+        int currentPageNumber = 3; // Content starts from page 3
+        
+        for (int i = 0; i < outlineData.getSections().size(); i++) {
+            String sectionTitle = outlineData.getSections().get(i);
+            String sectionContent = sectionsContent.get(i);
+            
+            // Add TOC entry for this main section
+            tocItems.add(new TocItem(sectionTitle, currentPageNumber, PaintManager.MARGIN));
+            
+            // Estimate pages needed (rough calculation for now)
+            // In a more sophisticated implementation, we'd do a complete layout simulation
+            int estimatedContentLength = sectionContent.length();
+            int estimatedPages = Math.max(1, estimatedContentLength / 2000); // Rough estimation
+            currentPageNumber += estimatedPages;
+        }
+    }
+
+    private void drawTableOfContentsPage(PdfDocument document) {
+        PdfDocument.PageInfo tocPageInfo = new PdfDocument.PageInfo.Builder(PaintManager.PAGE_WIDTH, PaintManager.PAGE_HEIGHT, 2).create();
+        PdfDocument.Page tocPage = document.startPage(tocPageInfo);
+        drawTableOfContents(tocPage.getCanvas());
+        document.finishPage(tocPage);
+    }
+
+    private void createFinalTocPage(PdfDocument document) {
+        // This method is no longer needed with the new approach
+    }
+
+    private int drawContentPages(PdfDocument document, OutlineData outlineData, List<String> sectionsContent, ContentDrawer contentDrawer, int startingPageNum) {
+        int currentPageNumber = startingPageNum;
+        PdfDocument.Page currentPage = null;
+        float yPosition = PaintManager.MARGIN;
+
+        for (int i = 0; i < outlineData.getSections().size(); i++) {
+            String sectionTitle = outlineData.getSections().get(i);
+            String sectionContent = sectionsContent.get(i);
+
+            // Start each main section on a new page
+            if (currentPage != null) {
+                contentDrawer.drawPageNumber(currentPage.getCanvas(), currentPageNumber - 1);
+                document.finishPage(currentPage);
+            }
+            
+            // Create new page for each main section
+            PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(PaintManager.PAGE_WIDTH, PaintManager.PAGE_HEIGHT, currentPageNumber).create();
+            currentPage = document.startPage(pageInfo);
+            yPosition = PaintManager.MARGIN;
+            
+            // Update TOC entry with actual page number (replace the estimated one)
+            if (i < tocItems.size()) {
+                tocItems.set(i, new TocItem(sectionTitle, currentPageNumber, yPosition));
+            }
+
+            // Enable section titles by setting includeSectionTitle to true
+            Object[] result = contentDrawer.drawSection(document, currentPage, sectionTitle, sectionContent, yPosition, currentPageNumber, true);
+            currentPage = (PdfDocument.Page) result[0];
+            yPosition = (float) result[1];
+            currentPageNumber = (int) result[2];
+        }
+
+        // Finish the last content page
+        if (currentPage != null) {
+            contentDrawer.drawPageNumber(currentPage.getCanvas(), currentPageNumber - 1);
+            document.finishPage(currentPage);
+        }
+        
+        return currentPageNumber - 1; // Return total pages used for content
+    }
+
+    private void updateTocPage(PdfDocument document) {
+        // This method is no longer needed with the new approach
     }
 
     private void drawCoverPage(PdfDocument document, String title) {
@@ -77,52 +155,6 @@ public class PdfGenerator {
         }
         
         document.finishPage(page);
-    }
-
-    private int drawContentPages(PdfDocument document, OutlineData outlineData, List<String> sectionsContent, ContentDrawer contentDrawer, int startingPageNum) {
-        int currentPageNumber = startingPageNum;
-        PdfDocument.Page currentPage = null;
-        float yPosition = PaintManager.MARGIN;
-
-        for (int i = 0; i < outlineData.getSections().size(); i++) {
-            String sectionTitle = outlineData.getSections().get(i);
-            String sectionContent = sectionsContent.get(i);
-
-            // Start each main section on a new page
-            if (currentPage != null) {
-                contentDrawer.drawPageNumber(currentPage.getCanvas(), currentPageNumber - 1);
-                document.finishPage(currentPage);
-            }
-            
-            // Create new page for each main section
-            PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(PaintManager.PAGE_WIDTH, PaintManager.PAGE_HEIGHT, currentPageNumber).create();
-            currentPage = document.startPage(pageInfo);
-            yPosition = PaintManager.MARGIN;
-            
-            // Add TOC entry for this main section with actual page number
-            tocItems.add(new TocItem(sectionTitle, currentPageNumber, yPosition));
-
-            Object[] result = contentDrawer.drawSection(document, currentPage, sectionTitle, sectionContent, yPosition, currentPageNumber, false);
-            currentPage = (PdfDocument.Page) result[0];
-            yPosition = (float) result[1];
-            currentPageNumber = (int) result[2];
-        }
-
-        // Finish the last content page
-        if (currentPage != null) {
-            contentDrawer.drawPageNumber(currentPage.getCanvas(), currentPageNumber - 1);
-            document.finishPage(currentPage);
-        }
-        
-        return currentPageNumber - 1; // Return total pages used for content
-    }
-
-    private void insertTableOfContentsPage(PdfDocument document) {
-        // Create the TOC page at position 2
-        PdfDocument.PageInfo tocPageInfo = new PdfDocument.PageInfo.Builder(PaintManager.PAGE_WIDTH, PaintManager.PAGE_HEIGHT, 2).create();
-        PdfDocument.Page tocPage = document.startPage(tocPageInfo);
-        drawTableOfContents(tocPage.getCanvas());
-        document.finishPage(tocPage);
     }
 
     private void drawTableOfContents(Canvas canvas) {

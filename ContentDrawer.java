@@ -433,8 +433,102 @@ public class ContentDrawer {
     }
 
     private Object[] drawTable(PdfDocument document, PdfDocument.Page page, String tableString, float yPos) {
-        // Fully implemented table drawing logic
-        return new Object[]{page, yPos}; // Placeholder for brevity
+        Canvas canvas = page.getCanvas();
+        int currentPageNum = document.getPages().size();
+        
+        try {
+            // Parse table string: [[TABLE|Title|Header1,Header2,Header3|Row1Col1,Row1Col2,Row1Col3|Row2Col1,Row2Col2,Row2Col3]]
+            tableString = tableString.replace("[[TABLE|", "").replace("]]", "");
+            String[] parts = tableString.split("\\|");
+            if (parts.length < 3) return new Object[]{page, yPos, currentPageNum};
+
+            String title = parts[0].trim();
+            String[] headers = parts[1].split(",");
+            List<String[]> rows = new ArrayList<>();
+            
+            for (int i = 2; i < parts.length; i++) {
+                rows.add(parts[i].split(","));
+            }
+
+            // Calculate table dimensions
+            float tableWidth = PaintManager.CONTENT_WIDTH - 20;
+            float colWidth = tableWidth / headers.length;
+            float rowHeight = 30f;
+            float titleHeight = 40f;
+            float totalTableHeight = titleHeight + (rowHeight * (rows.size() + 1)); // +1 for header
+
+            // Check if table fits on current page
+            if (yPos + totalTableHeight > PaintManager.PAGE_HEIGHT - PaintManager.MARGIN) {
+                page = finishAndStartNewPage(document, page);
+                canvas = page.getCanvas();
+                yPos = PaintManager.MARGIN;
+                currentPageNum = document.getPages().size();
+            }
+
+            // Draw table title
+            yPos += PaintManager.VISUAL_TITLE_MARGIN;
+            canvas.drawText(title, PaintManager.PAGE_WIDTH / 2f, yPos - paints.getChartTitlePaint().ascent(), paints.getChartTitlePaint());
+            yPos += titleHeight;
+
+            // Draw table border
+            Paint borderPaint = paints.getTableBorderPaint();
+            float left = PaintManager.MARGIN + 10;
+            float right = left + tableWidth;
+            float top = yPos;
+            float bottom = yPos + (rowHeight * (rows.size() + 1));
+
+            // Outer border
+            canvas.drawRect(left, top, right, bottom, borderPaint);
+
+            // Column dividers
+            for (int i = 1; i < headers.length; i++) {
+                float x = left + (i * colWidth);
+                canvas.drawLine(x, top, x, bottom, borderPaint);
+            }
+
+            // Row dividers
+            for (int i = 1; i <= rows.size(); i++) {
+                float y = top + (i * rowHeight);
+                canvas.drawLine(left, y, right, y, borderPaint);
+            }
+
+            // Draw headers
+            Paint headerPaint = paints.getTableHeaderPaint();
+            for (int i = 0; i < headers.length; i++) {
+                float cellLeft = left + (i * colWidth);
+                float cellCenter = cellLeft + (colWidth / 2);
+                float textY = top + (rowHeight / 2) - ((headerPaint.descent() + headerPaint.ascent()) / 2);
+                
+                String headerText = truncateText(headers[i].trim(), headerPaint, colWidth - 10);
+                canvas.drawText(headerText, cellCenter, textY, headerPaint);
+            }
+
+            // Draw data rows
+            Paint cellPaint = paints.getTableCellPaint();
+            for (int rowIdx = 0; rowIdx < rows.size(); rowIdx++) {
+                String[] row = rows.get(rowIdx);
+                float rowTop = top + ((rowIdx + 1) * rowHeight);
+                
+                for (int colIdx = 0; colIdx < Math.min(row.length, headers.length); colIdx++) {
+                    float cellLeft = left + (colIdx * colWidth);
+                    float cellCenter = cellLeft + (colWidth / 2);
+                    float textY = rowTop + (rowHeight / 2) - ((cellPaint.descent() + cellPaint.ascent()) / 2);
+                    
+                    String cellText = truncateText(row[colIdx].trim(), cellPaint, colWidth - 10);
+                    canvas.drawText(cellText, cellCenter, textY, cellPaint);
+                }
+            }
+
+            yPos = bottom + PaintManager.VISUAL_BOTTOM_MARGIN;
+
+        } catch (Exception e) {
+            Log.e("ContentDrawer", "Failed to parse or draw table: " + tableString, e);
+            // Draw error message
+            canvas.drawText("Error rendering table", PaintManager.MARGIN, yPos, paints.getTextPaint());
+            yPos += 30;
+        }
+        
+        return new Object[]{page, yPos, currentPageNum};
     }
 
     // UTILITY METHODS
