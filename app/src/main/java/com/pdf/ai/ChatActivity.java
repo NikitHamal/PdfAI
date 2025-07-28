@@ -82,9 +82,9 @@ public class ChatActivity extends AppCompatActivity implements
         chatRecyclerView = findViewById(R.id.chat_recycler_view);
         messageEditText = findViewById(R.id.message_edit_text);
         sendButton = findViewById(R.id.send_button);
-        settingsIcon = findViewById(R.id.settings_icon);
-        modelNameText = findViewById(R.id.model_name_text);
-        LinearLayout modelPickerLayout = findViewById(R.id.model_picker_layout);
+        settingsIcon = findViewById(R.id.icon_settings_round);
+        modelNameText = findViewById(R.id.model_name);
+        LinearLayout modelPickerLayout = findViewById(R.id.model_picker);
 
         modelNameText.setText(selectedModel);
 
@@ -306,7 +306,7 @@ public class ChatActivity extends AppCompatActivity implements
                     runOnUiThread(() -> {
                         removeProgressMessage();
                         String cleanedTitle = pdfTitle.replace("A comprehensive", "").trim();
-                        Toast.makeText(MainActivity.this, "PDF created successfully", Toast.LENGTH_LONG).show();
+                        Toast.makeText(ChatActivity.this, "PDF created successfully", Toast.LENGTH_LONG).show();
                         chatMessages.add(new ChatMessage(ChatMessage.TYPE_PDF_DOWNLOAD, null, null, null, pathOrUri, cleanedTitle));
                         messageAdapter.notifyItemInserted(chatMessages.size() - 1);
                         chatRecyclerView.scrollToPosition(chatMessages.size() - 1);
@@ -318,7 +318,7 @@ public class ChatActivity extends AppCompatActivity implements
                 public void onPdfGenerationFailed(String error) {
                     runOnUiThread(() -> {
                         removeProgressMessage();
-                        Toast.makeText(MainActivity.this, "Error creating PDF: " + error, Toast.LENGTH_LONG).show();
+                        Toast.makeText(ChatActivity.this, "Error creating PDF: " + error, Toast.LENGTH_LONG).show();
                     });
                 }
             });
