@@ -9,7 +9,7 @@ android {
 
 	signingConfigs {
         release {
-            storeFile file('my-release-key.keystore')
+            storeFile file('keystore.jks')
             storePassword 'password'
             keyAlias 'pdfai'
             keyPassword 'password'
@@ -41,4 +41,6 @@ dependencies {
 	implementation fileTree(dir: 'libs', include: ['*.jar'])
 	implementation 'androidx.appcompat:appcompat:1.7.0'
 	implementation 'com.google.android.material:material:1.12.0'
+	implementation 'com.squareup.okhttp3:okhttp:4.9.3'
+	implementation 'com.squareup.okhttp3:logging-interceptor:4.9.3'
 }

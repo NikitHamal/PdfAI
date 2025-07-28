@@ -25,14 +25,6 @@ jobs:
             chmod +x ./gradlew
           fi
 
-      - name: Generate local.properties
-        run: echo "sdk.dir=$ANDROID_HOME" > local.properties
-
-      - name: Generate keystore for signing
-        run: |
-          if [ ! -f my-release-key.keystore ]; then
-            keytool -genkeypair -v -keystore my-release-key.keystore -alias pdfai -keyalg RSA -keysize 2048 -validity 10000 -storepass password -keypass password -dname "CN=pdfai, OU=pdfai, O=pdfai, L=pdfai, S=pdfai, C=US"
-          fi
 
 
       - name: Build Release APK
@@ -54,7 +46,7 @@ jobs:
             echo "No unsigned APK found!" && exit 1
           fi
           cp "$APK_PATH" app-release-unsigned.apk
-          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore my-release-key.keystore -storepass password -keypass password app-release-unsigned.apk pdfai
+          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore app/keystore.jks -storepass password -keypass password app-release-unsigned.apk pdfai
           ZIPALIGN=$(find $ANDROID_HOME -name zipalign | head -n 1)
           if [ -z "$ZIPALIGN" ]; then
             ZIPALIGN=zipalign
