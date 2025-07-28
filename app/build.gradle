@@ -4,9 +4,18 @@ plugins {
 
 android {
 	compileSdk 34
-	
+
 	useLibrary 'org.apache.http.legacy'
-	
+
+	signingConfigs {
+        release {
+            storeFile file('my-release-key.keystore')
+            storePassword 'password'
+            keyAlias 'pdfai'
+            keyPassword 'password'
+        }
+    }
+
 	defaultConfig {
 		applicationId "com.pdf.ai"
 		namespace "com.pdf.ai"
@@ -15,11 +24,12 @@ android {
 		versionCode 1
 		versionName "1.0"
 	}
-	
+
 	buildTypes {
 		release {
 			minifyEnabled false
 			proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+			signingConfig signingConfigs.release
 		}
 	}
 	buildFeatures {
