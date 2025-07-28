@@ -43,11 +43,20 @@ public class ChatActivity extends AppCompatActivity implements
         MessageAdapter.OnOutlineActionListener,
         MessageAdapter.OnSuggestionClickListener {
 
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            onBackPressed();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
     private RecyclerView chatRecyclerView;
     private MessageAdapter messageAdapter;
     private List<ChatMessage> chatMessages;
     private EditText messageEditText;
-    private com.google.android.material.button.MaterialButton sendButton;
+    private android.widget.ImageButton sendButton;
     private ImageView settingsIcon;
     private TextView modelNameText;
 
@@ -104,6 +113,11 @@ public class ChatActivity extends AppCompatActivity implements
 
         // Initialize the ExecutorService
         executorService = Executors.newSingleThreadExecutor();
+
+        // Set up the toolbar
+        com.google.android.material.appbar.MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
     }
 
     @Override
@@ -158,6 +172,17 @@ public class ChatActivity extends AppCompatActivity implements
         }
 
         bottomSheetDialog.show();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.chat_menu, menu);
+        MenuItem modelSelectorItem = menu.findItem(R.id.action_model_selector);
+        View actionView = modelSelectorItem.getActionView();
+        modelNameText = actionView.findViewById(R.id.model_name);
+        modelNameText.setText(selectedModel);
+        actionView.setOnClickListener(v -> showModelPicker());
+        return true;
     }
 
     private void sendUserMessage(String message) {

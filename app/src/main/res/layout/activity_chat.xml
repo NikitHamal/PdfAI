@@ -15,7 +15,7 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:title="Chat"
-            app:navigationIcon="@drawable/ic_arrow_back_24" />
+            app:navigationIcon="@drawable/ic_arrow_back_themed_24" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -36,30 +36,25 @@
         android:orientation="horizontal"
         android:padding="8dp">
 
-        <com.google.android.material.textfield.TextInputLayout
+        <EditText
+            android:id="@+id/message_edit_text"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
+            android:background="@drawable/edit_text_background"
+            android:hint="Ask me anything..."
+            android:inputType="textCapSentences|textMultiLine"
+            android:maxLines="5"
+            android:padding="16dp" />
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/message_edit_text"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Ask me anything..."
-                android:inputType="textCapSentences|textMultiLine"
-                android:maxLines="5" />
-
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.button.MaterialButton
+        <ImageButton
             android:id="@+id/send_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
             android:layout_marginStart="8dp"
-            android:layout_gravity="center_vertical"
-            app:icon="@drawable/ic_send_24"
-            style="@style/Widget.Material3.Button.IconButton" />
+            android:background="@drawable/send_button_background"
+            android:src="@drawable/ic_send_themed_24"
+            android:scaleType="center" />
 
     </LinearLayout>
 
