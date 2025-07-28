@@ -37,8 +37,8 @@ jobs:
       - name: Add signing config to app/build.gradle
         run: |
           if ! grep -q 'signingConfigs' app/build.gradle; then
-            sed -i "/buildTypes {/,/}/ s/buildTypes {/signingConfigs { release { storeFile file('my-release-key.keystore')\\n            storePassword 'password'\\n            keyAlias 'pdfai'\\n            keyPassword 'password'\\n        } }\\n    buildTypes {/" app/build.gradle
-            sed -i "/release {/a \\\\            signingConfig signingConfigs.release" app/build.gradle
+            sed -i "/buildTypes {/i \    signingConfigs { release { storeFile file('my-release-key.keystore')\\n            storePassword 'password'\\n            keyAlias 'pdfai'\\n            keyPassword 'password'\\n        } }" app/build.gradle
+            sed -i "/release {/a \            signingConfig signingConfigs.release" app/build.gradle
           fi
 
       - name: Build Release APK
