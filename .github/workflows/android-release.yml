@@ -34,29 +34,15 @@ jobs:
           else
             ./gradle/gradle-8.9/bin/gradle assembleRelease --no-daemon --stacktrace
           fi
-          ls -R app/build/outputs/apk/release
 
       - name: Set short SHA
         id: set_sha
         run: echo "short_sha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
-      - name: Find and sign APK
-        run: |
-          APK_PATH=$(find app/build/outputs/apk/release -name '*-unsigned.apk' | head -n 1)
-          if [ -z "$APK_PATH" ]; then
-            echo "No unsigned APK found!" && exit 1
-          fi
-          cp "$APK_PATH" app-release-unsigned.apk
-          jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore app/keystore.jks -storepass password -keypass password app-release-unsigned.apk pdfai
-          ZIPALIGN=$(find $ANDROID_HOME -name zipalign | head -n 1)
-          if [ -z "$ZIPALIGN" ]; then
-            ZIPALIGN=zipalign
-          fi
-          $ZIPALIGN -v -p 4 app-release-unsigned.apk app-release-signed.apk
 
       - name: Rename APK with commit hash
         run: |
-          mv app-release-signed.apk app-release-${{ steps.set_sha.outputs.short_sha }}.apk
+          mv app/build/outputs/apk/release/app-release.apk app-release-${{ steps.set_sha.outputs.short_sha }}.apk
 
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
