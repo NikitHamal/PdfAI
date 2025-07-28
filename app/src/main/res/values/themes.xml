@@ -15,4 +15,10 @@
         <item name="android:fontFamily">@font/reg</item>
         <item name="android:includeFontPadding">false</item>
     </style>
+
+    <style name="AppTheme.DebugActivity" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="colorPrimary">@color/md_theme_light_primary</item>
+        <item name="colorPrimaryDark">@color/md_theme_light_primary</item>
+        <item name="colorAccent">@color/md_theme_light_primary</item>
+    </style>
 </resources>

@@ -39,8 +39,7 @@
 			android:screenOrientation="portrait" />
 		<activity
 			android:name=".DebugActivity"
-			android:screenOrientation="portrait"
-			android:theme="@style/AppTheme.DebugActivity" />
+			android:screenOrientation="portrait" />
 		<provider
 			android:name="androidx.startup.InitializationProvider"
 			android:authorities="com.pdf.ai.androidx-startup"
