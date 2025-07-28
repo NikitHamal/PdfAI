@@ -34,6 +34,7 @@ jobs:
           else
             ./gradle/gradle-8.9/bin/gradle assembleRelease --no-daemon --stacktrace
           fi
+          ls -R app/build/outputs/apk/release
 
       - name: Set short SHA
         id: set_sha
