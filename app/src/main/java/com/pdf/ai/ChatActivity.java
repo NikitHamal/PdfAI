@@ -82,11 +82,6 @@ public class ChatActivity extends AppCompatActivity implements
         chatRecyclerView = findViewById(R.id.chat_recycler_view);
         messageEditText = findViewById(R.id.message_edit_text);
         sendButton = findViewById(R.id.send_button);
-        settingsIcon = findViewById(R.id.icon_settings_round);
-        modelNameText = findViewById(R.id.model_name);
-        LinearLayout modelPickerLayout = findViewById(R.id.model_picker);
-
-        modelNameText.setText(selectedModel);
 
         chatMessages = new ArrayList<>();
         messageAdapter = new MessageAdapter(this, chatMessages, this, this);
@@ -106,8 +101,6 @@ public class ChatActivity extends AppCompatActivity implements
             }
         });
 
-        settingsIcon.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
-        modelPickerLayout.setOnClickListener(v -> showModelPicker());
 
         // Initialize the ExecutorService
         executorService = Executors.newSingleThreadExecutor();
