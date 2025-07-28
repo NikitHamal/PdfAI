@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/md_theme_light_background">
+
+    <LinearLayout
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:background="@color/md_theme_light_surface">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="PDF AI"
+            android:textAppearance="?attr/textAppearanceTitleLarge"
+            android:textColor="@color/md_theme_light_onSurface" />
+
+        <LinearLayout
+            android:id="@+id/model_picker_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/model_picker_background"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:layout_marginEnd="16dp"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:id="@+id/model_name_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="gemini-1.5-flash-latest"
+                android:textSize="12sp"
+                android:textColor="?attr/colorOnSurface" />
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/icon_arrow_drop_down_round"
+                android:tint="?attr/colorOnSurface"
+                android:layout_marginStart="4dp"/>
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/settings_icon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/icon_settings_round"
+            android:contentDescription="Settings"
+            android:tint="@color/md_theme_light_onSurfaceVariant"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackgroundBorderless" />
+
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/chat_recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/toolbar"
+        android:layout_above="@+id/input_layout"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:clipToPadding="false"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp" />
+
+    <LinearLayout
+        android:id="@+id/input_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        android:background="@color/md_theme_light_surface">
+
+        <EditText
+            android:id="@+id/message_edit_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Ask me anything..."
+            android:minHeight="48dp"
+            android:padding="12dp"
+            android:background="@drawable/rounded_edittext_background"
+            android:textColor="@color/md_theme_light_onSurface"
+            android:textColorHint="@color/md_theme_light_onSurfaceVariant"
+            android:inputType="textCapSentences|textMultiLine"
+            android:maxLines="5"
+            android:textAppearance="?attr/textAppearanceTitleSmall"
+            android:scrollbars="vertical" />
+
+        <LinearLayout
+            android:id="@+id/send_button"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="8dp"
+            android:layout_gravity="center_vertical"
+            android:background="@drawable/send_button_background"
+            android:gravity="center"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="Send">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/icon_send_round"
+                app:tint="@color/md_theme_light_onPrimary" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</RelativeLayout>

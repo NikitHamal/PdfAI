@@ -1,0 +1,11 @@
+
+<resources>
+    <dimen name="divider_height">1dp</dimen>
+    <dimen name="divider_margin_start">16dp</dimen>
+    <dimen name="dialog_item_padding_horizontal">16dp</dimen>
+    <dimen name="dialog_item_padding_vertical">8dp</dimen>
+    <dimen name="dialog_icon_size">20dp</dimen>
+    <dimen name="dialog_icon_padding">2dp</dimen>
+    <dimen name="dialog_text_margin_start">16dp</dimen>
+    <dimen name="chip_corner_radius_30dp">30dp</dimen>
+</resources>
