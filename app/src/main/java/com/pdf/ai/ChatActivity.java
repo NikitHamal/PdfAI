@@ -47,7 +47,7 @@ public class ChatActivity extends AppCompatActivity implements
     private MessageAdapter messageAdapter;
     private List<ChatMessage> chatMessages;
     private EditText messageEditText;
-    private LinearLayout sendButton;
+    private com.google.android.material.button.MaterialButton sendButton;
     private ImageView settingsIcon;
     private TextView modelNameText;
 
