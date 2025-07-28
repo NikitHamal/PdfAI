@@ -1,3 +1,4 @@
 <resources>
-	<string name="app_name" translatable="false">Pdf AI</string>
+    <string name="app_name">PDF AI</string>
+    <string name="action_settings">Settings</string>
 </resources>

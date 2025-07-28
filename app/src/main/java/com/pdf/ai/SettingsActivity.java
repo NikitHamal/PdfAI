@@ -16,12 +16,15 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
+import androidx.appcompat.app.AppCompatDelegate;
+import com.google.android.material.materialswitch.MaterialSwitch;
 
 public class SettingsActivity extends AppCompatActivity {
 
     private PreferencesManager preferencesManager;
     private TextInputEditText apiKeyEditText;
     private AutoCompleteTextView modelSpinnerAutocomplete;
+    private MaterialSwitch themeSwitch;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +40,7 @@ public class SettingsActivity extends AppCompatActivity {
         apiKeyEditText = findViewById(R.id.api_key_edit_text);
         MaterialButton saveApiKeyButton = findViewById(R.id.save_api_key_button);
         modelSpinnerAutocomplete = findViewById(R.id.model_spinner_autocomplete);
+        themeSwitch = findViewById(R.id.theme_switch);
 
         // Load saved API key and model
         apiKeyEditText.setText(preferencesManager.getGeminiApiKey());
@@ -69,6 +73,24 @@ public class SettingsActivity extends AppCompatActivity {
             String selectedModel = (String) parent.getItemAtPosition(position);
             preferencesManager.setSelectedModel(selectedModel);
             Toast.makeText(this, "Default model saved!", Toast.LENGTH_SHORT).show();
+        });
+
+        int currentNightMode = getResources().getConfiguration().uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK;
+        switch (currentNightMode) {
+            case android.content.res.Configuration.UI_MODE_NIGHT_NO:
+                themeSwitch.setChecked(false);
+                break;
+            case android.content.res.Configuration.UI_MODE_NIGHT_YES:
+                themeSwitch.setChecked(true);
+                break;
+        }
+
+        themeSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+            } else {
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+            }
         });
     }
 

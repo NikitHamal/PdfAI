@@ -39,7 +39,7 @@ import android.view.MenuItem;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import android.widget.TextView;
 
-public class MainActivity extends AppCompatActivity implements
+public class ChatActivity extends AppCompatActivity implements
         MessageAdapter.OnOutlineActionListener,
         MessageAdapter.OnSuggestionClickListener {
 
@@ -69,7 +69,7 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.main);
+        setContentView(R.layout.activity_chat);
 
         preferencesManager = new PreferencesManager(this);
         geminiApiClient = new GeminiApiClient();
@@ -108,10 +108,6 @@ public class MainActivity extends AppCompatActivity implements
 
         settingsIcon.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
         modelPickerLayout.setOnClickListener(v -> showModelPicker());
-
-        if (geminiApiKey == null || geminiApiKey.isEmpty()) {
-            showApiKeyDialog();
-        }
 
         // Initialize the ExecutorService
         executorService = Executors.newSingleThreadExecutor();
