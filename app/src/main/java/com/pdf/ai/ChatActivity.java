@@ -85,6 +85,8 @@ public class ChatActivity extends AppCompatActivity implements
     // Executor Service for background tasks
     private ExecutorService executorService;
 
+    private static final String TAG = "ChatActivity";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
