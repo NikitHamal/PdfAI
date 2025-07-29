@@ -304,7 +304,7 @@ public class ChatActivity extends AppCompatActivity implements
     }
 
     private void sendQwenCompletion(String message) {
-        showProgressMessage("Sending request...", 0);
+        runOnUiThread(() -> showProgressMessage("Sending request...", 0));
         
         qwenApiClient.sendCompletion(currentChatId, selectedModel, message, currentParentId, 
                 thinkingEnabled, webSearchEnabled, new QwenApiClient.QwenApiCallback() {
