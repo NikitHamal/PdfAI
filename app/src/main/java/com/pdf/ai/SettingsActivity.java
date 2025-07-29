@@ -77,7 +77,8 @@ public class SettingsActivity extends AppCompatActivity implements ModelSelector
     }
 
     private void setupModelSelector() {
-        modelSelectorComponent = new ModelSelectorComponent(this, this);
+        modelSelectorComponent = new ModelSelectorComponent(this, modelSelectorContainer);
+        modelSelectorComponent.setOnModelSelectedListener(this);
         modelSelectorComponent.setSelectedModel(preferencesManager.getSelectedModel());
         View selectorView = modelSelectorComponent.createSelectorView();
         modelSelectorContainer.addView(selectorView);
@@ -85,7 +86,7 @@ public class SettingsActivity extends AppCompatActivity implements ModelSelector
 
     @Override
     public void onModelSelected(String modelId, QwenApiClient.ModelInfo modelInfo) {
-        preferencesManager.setSelectedModel(modelId);
+        preferencesManager.saveSelectedModel(modelId);
         Toast.makeText(this, "Default model updated to " + modelInfo.displayName, Toast.LENGTH_SHORT).show();
         
         // Update the selector view

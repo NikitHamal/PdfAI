@@ -361,7 +361,7 @@ public class ChatActivity extends AppCompatActivity implements
     public void onModelSelected(String modelId, QwenApiClient.ModelInfo modelInfo) {
         selectedModel = modelId;
         preferencesManager.saveSelectedModel(modelId);
-        Toast.makeText(this, "Model changed to: " + modelInfo.name, Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Model changed to: " + modelInfo.displayName, Toast.LENGTH_SHORT).show();
     }
 
     @Override
