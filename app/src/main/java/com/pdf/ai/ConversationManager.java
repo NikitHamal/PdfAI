@@ -1,4 +1,4 @@
-package com.chat.ai;
+package com.pdf.ai;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -60,6 +60,7 @@ public class ConversationManager {
         public String qwenChatId;
         public String qwenParentId;
         public boolean isQwenConversation;
+        public boolean isPinned;
         
         public Conversation() {
             this.id = UUID.randomUUID().toString();
@@ -127,6 +128,13 @@ public class ConversationManager {
         return prefs.getString(KEY_CURRENT_CONVERSATION_ID, null);
     }
     
+    /**
+     * Set current conversation ID
+     */
+    public void setCurrentConversationId(String conversationId) {
+        saveCurrentConversationId(conversationId);
+    }
+
     /**
      * Save current conversation ID
      */
@@ -251,6 +259,44 @@ public class ConversationManager {
         
         Log.d(TAG, "Loaded " + conversations.size() + " conversations");
         return conversations;
+    }
+
+    public List<Conversation> getPinnedConversations() {
+        List<Conversation> allConversations = getAllConversations();
+        List<Conversation> pinnedConversations = new ArrayList<>();
+        for (Conversation conversation : allConversations) {
+            if (conversation.isPinned) {
+                pinnedConversations.add(conversation);
+            }
+        }
+        return pinnedConversations;
+    }
+
+    public List<Conversation> getUnpinnedConversations() {
+        List<Conversation> allConversations = getAllConversations();
+        List<Conversation> unpinnedConversations = new ArrayList<>();
+        for (Conversation conversation : allConversations) {
+            if (!conversation.isPinned) {
+                unpinnedConversations.add(conversation);
+            }
+        }
+        return unpinnedConversations;
+    }
+
+    public void setConversationPinned(String conversationId, boolean isPinned) {
+        Conversation conversation = loadConversation(conversationId);
+        if (conversation != null) {
+            conversation.isPinned = isPinned;
+            saveConversation(conversation);
+        }
+    }
+
+    public void renameConversation(String conversationId, String newTitle) {
+        Conversation conversation = loadConversation(conversationId);
+        if (conversation != null) {
+            conversation.title = newTitle;
+            saveConversation(conversation);
+        }
     }
     
     /**
