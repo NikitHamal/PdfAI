@@ -19,21 +19,11 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Make gradlew executable (if present)
-        run: |
-          if [ -f "./gradlew" ]; then
-            chmod +x ./gradlew
-          fi
-
-
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
 
       - name: Build Release APK
-        run: |
-          if [ -f "./gradlew" ]; then
-            ./gradlew assembleRelease --no-daemon --stacktrace
-          else
-            ./gradle/gradle-8.9/bin/gradle assembleRelease --no-daemon --stacktrace
-          fi
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Set short SHA
         id: set_sha
