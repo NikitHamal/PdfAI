@@ -53,7 +53,7 @@
                     android:singleLine="true" />
 
                 <ImageView
-                    android:id="@+id/add_title_section"
+                    android:id="@+id/title_ai_enhance"
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:src="@drawable/icon_add_circle_round"
