@@ -14,7 +14,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import io.noties.markwon.Markwon;
 import io.noties.markwon.html.HtmlPlugin;
 import io.noties.markwon.image.ImagesPlugin;
-import io.noties.markwon.syntax.highlight.PrismHighlightPlugin;
 
 import java.util.List;
 import java.util.regex.Matcher;
@@ -44,7 +43,6 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         this.markwon = Markwon.builder(context)
                 .usePlugin(HtmlPlugin.create())
                 .usePlugin(ImagesPlugin.create())
-                .usePlugin(PrismHighlightPlugin.create())
                 .build();
     }
 
@@ -175,9 +173,8 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 String language = matcher.group(1);
                 String code = matcher.group(2);
                 
-                // Replace with HTML that will be rendered as custom code block
-                String replacement = "<div class='code-block' data-language='" + (language != null ? language : "") + "'>" + 
-                                  "<pre><code>" + escapeHtml(code) + "</code></pre></div>";
+                // Replace with simple HTML code block
+                String replacement = "<pre><code>" + escapeHtml(code) + "</code></pre>";
                 matcher.appendReplacement(result, replacement);
             }
             matcher.appendTail(result);
