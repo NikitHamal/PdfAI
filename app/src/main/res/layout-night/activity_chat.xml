@@ -21,7 +21,6 @@
             app:navigationIcon="@drawable/ic_arrow_back_24"
             app:navigationIconTint="?attr/colorOnSurface">
 
-            <!-- Model selector in the right side of toolbar -->
             <FrameLayout
                 android:id="@+id/fl_model_selector_container"
                 android:layout_width="wrap_content"
@@ -33,7 +32,6 @@
 
     </com.google.android.material.appbar.AppBarLayout>
 
-    <!-- Chat messages recycler view -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/chat_recycler_view"
         android:layout_width="match_parent"
@@ -70,13 +68,13 @@
             android:layout_height="wrap_content"
             android:text="Ask me anything and I'll help you out"
             android:textSize="14sp"
-            android:textColor="@color/md_theme_light_onSurfaceVariant"
+            android:textColor="@color/md_theme_dark_onSurfaceVariant"
             android:fontFamily="@font/reg"
             android:gravity="center" />
 
     </LinearLayout>
 
-    <!-- Input area with modern design -->
+    <!-- Input container -->
     <LinearLayout
         android:id="@+id/input_container"
         android:layout_width="match_parent"
@@ -93,18 +91,16 @@
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
-            <!-- Tune button -->
             <ImageButton
                 android:id="@+id/btn_tune"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:src="@drawable/ic_tune_24"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:tint="@color/md_theme_light_onSurfaceVariant"
+                android:tint="@color/md_theme_dark_onSurfaceVariant"
                 android:layout_marginEnd="8dp"
                 android:contentDescription="Tune settings" />
 
-            <!-- Message input -->
             <EditText
                 android:id="@+id/message_edit_text"
                 android:layout_width="0dp"
@@ -114,7 +110,7 @@
                 android:hint="Ask me anything..."
                 android:textSize="14sp"
                 android:textColor="?attr/colorOnSurface"
-                android:textColorHint="@color/md_theme_light_onSurfaceVariant"
+                android:textColorHint="@color/md_theme_dark_onSurfaceVariant"
                 android:fontFamily="@font/reg"
                 android:inputType="textCapSentences|textMultiLine"
                 android:maxLines="4"
@@ -122,7 +118,6 @@
                 android:padding="16dp"
                 android:layout_marginEnd="8dp" />
 
-            <!-- Send button -->
             <ImageButton
                 android:id="@+id/send_button"
                 android:layout_width="60dp"

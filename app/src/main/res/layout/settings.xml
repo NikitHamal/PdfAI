@@ -81,7 +81,7 @@
                 android:layout_height="wrap_content"
                 android:text="Choose the default AI model for new conversations"
                 android:textSize="14sp"
-                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textColor="@color/md_theme_light_onSurfaceVariant"
                 android:fontFamily="@font/reg"
                 android:layout_marginBottom="16dp" />
 

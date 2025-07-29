@@ -57,12 +57,12 @@
                 android:layout_marginBottom="4dp" />
 
             <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Enable step-by-step reasoning for complex questions"
-                android:textSize="12sp"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                android:fontFamily="@font/reg" />
+                            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Enable step-by-step reasoning for complex questions"
+            android:textSize="12sp"
+            android:textColor="@color/md_theme_light_onSurfaceVariant"
+            android:fontFamily="@font/reg" />
 
         </LinearLayout>
 
@@ -100,12 +100,12 @@
                 android:layout_marginBottom="4dp" />
 
             <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Search the web for real-time information"
-                android:textSize="12sp"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                android:fontFamily="@font/reg" />
+                            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Search the web for real-time information"
+            android:textSize="12sp"
+            android:textColor="@color/md_theme_light_onSurfaceVariant"
+            android:fontFamily="@font/reg" />
 
         </LinearLayout>
 
@@ -124,13 +124,13 @@
         android:layout_height="wrap_content"
         android:text="Note: These features are only available with compatible Qwen models"
         android:textSize="11sp"
-        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textColor="@color/md_theme_light_onSurfaceVariant"
         android:fontFamily="@font/reg"
         android:background="@drawable/info_note_background"
         android:padding="12dp"
         android:drawableStart="@drawable/ic_info_24"
         android:drawablePadding="8dp"
-        android:drawableTint="?attr/colorOnSurfaceVariant"
+        android:drawableTint="@color/md_theme_light_onSurfaceVariant"
         android:gravity="center_vertical" />
 
 </LinearLayout>

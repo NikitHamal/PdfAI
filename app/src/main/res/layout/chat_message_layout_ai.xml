@@ -14,7 +14,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
         android:visibility="gone"
-        app:cardBackgroundColor="?attr/colorSurfaceVariant"
+        app:cardBackgroundColor="@color/md_theme_light_surfaceVariant"
         app:cardCornerRadius="16dp"
         app:cardElevation="0dp">
 
@@ -52,22 +52,22 @@
                     android:textStyle="bold" />
 
                 <ImageView
-                    android:id="@+id/thinking_expand_icon"
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:src="@drawable/ic_expand_more_24"
-                    android:tint="?attr/colorOnSurfaceVariant" />
+                                    android:id="@+id/thinking_expand_icon"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_expand_more_24"
+                android:tint="@color/md_theme_light_onSurfaceVariant" />
 
             </LinearLayout>
 
-            <TextView
-                android:id="@+id/thinking_content"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:textSize="11sp"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                android:fontFamily="@font/reg"
+                    <TextView
+            android:id="@+id/thinking_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textSize="11sp"
+            android:textColor="@color/md_theme_light_onSurfaceVariant"
+            android:fontFamily="@font/reg"
                 android:lineSpacingExtra="2dp"
                 android:visibility="gone" />
 
@@ -82,7 +82,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
         android:visibility="gone"
-        app:cardBackgroundColor="?attr/colorSecondaryContainer"
+        app:cardBackgroundColor="@color/md_theme_light_secondaryContainer"
         app:cardCornerRadius="16dp"
         app:cardElevation="0dp">
 
@@ -119,23 +119,23 @@
                     android:fontFamily="@font/reg"
                     android:textStyle="bold" />
 
-                <ImageView
-                    android:id="@+id/web_search_expand_icon"
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:src="@drawable/ic_expand_more_24"
-                    android:tint="?attr/colorOnSurfaceVariant" />
+                            <ImageView
+                android:id="@+id/web_search_expand_icon"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_expand_more_24"
+                android:tint="@color/md_theme_light_onSurfaceVariant" />
 
             </LinearLayout>
 
-            <TextView
-                android:id="@+id/web_search_content"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:textSize="11sp"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                android:fontFamily="@font/reg"
+                    <TextView
+            android:id="@+id/web_search_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textSize="11sp"
+            android:textColor="@color/md_theme_light_onSurfaceVariant"
+            android:fontFamily="@font/reg"
                 android:lineSpacingExtra="2dp"
                 android:visibility="gone" />
 
@@ -150,7 +150,7 @@
         android:layout_height="wrap_content"
         android:background="@drawable/ai_message_background"
         android:padding="16dp"
-        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textColor="@color/md_theme_light_onSurfaceVariant"
         android:textSize="13sp"
         android:fontFamily="@font/reg"
         android:lineSpacingExtra="2dp"

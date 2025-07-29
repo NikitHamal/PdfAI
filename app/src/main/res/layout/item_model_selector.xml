@@ -30,7 +30,7 @@
             android:layout_height="wrap_content"
             android:text="The most powerful mixture-of-experts language model"
             android:textSize="12sp"
-            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:textColor="@color/md_theme_light_onSurfaceVariant"
             android:fontFamily="@font/reg"
             android:layout_marginTop="2dp"
             android:maxLines="2"

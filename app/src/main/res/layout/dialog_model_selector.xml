@@ -20,7 +20,7 @@
         android:layout_height="wrap_content"
         android:text="Choose an AI model for your conversation"
         android:textSize="14sp"
-        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textColor="@color/md_theme_light_onSurfaceVariant"
         android:layout_marginBottom="24dp"
         android:fontFamily="@font/reg" />
 
