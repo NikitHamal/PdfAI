@@ -2,14 +2,10 @@ package com.pdf.ai;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-
 import com.pdf.ai.ChatMessage;
-import com.pdf.ai.OutlineData;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,25 +50,7 @@ public class PreferencesManager {
                 if (message.getProgressStatus() != null) {
                     jsonObject.put("progressStatus", message.getProgressStatus());
                 }
-                // Save progressValue
                 jsonObject.put("progressValue", message.getProgressValue());
-
-                if (message.getOutlineData() != null) {
-                    JSONObject outlineJson = new JSONObject();
-                    outlineJson.put("title", message.getOutlineData().getPdfTitle());
-                    JSONArray sectionsArray = new JSONArray();
-                    for (String section : message.getOutlineData().getSections()) {
-                        sectionsArray.put(section);
-                    }
-                    outlineJson.put("sections", sectionsArray);
-                    jsonObject.put("outlineData", outlineJson);
-                }
-                if (message.getFilePath() != null) {
-                    jsonObject.put("filePath", message.getFilePath());
-                }
-                if (message.getPdfTitle() != null) {
-                    jsonObject.put("pdfTitle", message.getPdfTitle());
-                }
                 jsonArray.put(jsonObject);
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -92,24 +70,9 @@ public class PreferencesManager {
                     int type = jsonObject.getInt("type");
                     String message = jsonObject.optString("message", null);
                     String progressStatus = jsonObject.optString("progressStatus", null);
-                    // Load progressValue, default to 0 if not found (for older saved messages)
                     int progressValue = jsonObject.optInt("progressValue", 0);
-                    String filePath = jsonObject.optString("filePath", null);
-                    String pdfTitle = jsonObject.optString("pdfTitle", null);
 
-                    OutlineData outlineData = null;
-                    if (jsonObject.has("outlineData")) {
-                        JSONObject outlineJson = jsonObject.getJSONObject("outlineData");
-                        String title = outlineJson.getString("title");
-                        JSONArray sectionsArray = outlineJson.getJSONArray("sections");
-                        List<String> sections = new ArrayList<>();
-                        for (int j = 0; j < sectionsArray.length(); j++) {
-                            sections.add(sectionsArray.getString(j));
-                        }
-                        outlineData = new OutlineData(title, sections);
-                    }
-                    // Use the new constructor that includes progressValue
-                    chatMessages.add(new ChatMessage(type, message, progressStatus, progressValue, outlineData, filePath, pdfTitle));
+                    chatMessages.add(new ChatMessage(type, message, progressStatus, progressValue));
                 }
             } catch (JSONException e) {
                 e.printStackTrace();

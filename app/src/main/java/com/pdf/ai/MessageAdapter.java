@@ -9,7 +9,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import java.util.List;
@@ -169,44 +168,45 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     }
 
     class SuggestionsViewHolder extends RecyclerView.ViewHolder {
-        MaterialCardView suggestion1, suggestion2, suggestion3, suggestion4;
+        MaterialCardView suggestionCard1, suggestionCard2, suggestionCard3, suggestionCard4;
+        TextView suggestionText1, suggestionText2, suggestionText3, suggestionText4;
         OnSuggestionClickListener listener;
 
         public SuggestionsViewHolder(@NonNull View itemView, OnSuggestionClickListener listener) {
             super(itemView);
             this.listener = listener;
-            suggestion1 = itemView.findViewById(R.id.suggestion1);
-            suggestion2 = itemView.findViewById(R.id.suggestion2);
-            suggestion3 = itemView.findViewById(R.id.suggestion3);
-            suggestion4 = itemView.findViewById(R.id.suggestion4);
+            suggestionCard1 = itemView.findViewById(R.id.suggestion1);
+            suggestionCard2 = itemView.findViewById(R.id.suggestion2);
+            suggestionCard3 = itemView.findViewById(R.id.suggestion3);
+            suggestionCard4 = itemView.findViewById(R.id.suggestion4);
+            suggestionText1 = itemView.findViewById(R.id.suggestion_text1);
+            suggestionText2 = itemView.findViewById(R.id.suggestion_text2);
+            suggestionText3 = itemView.findViewById(R.id.suggestion_text3);
+            suggestionText4 = itemView.findViewById(R.id.suggestion_text4);
         }
 
         void bind(ChatMessage message) {
-            // Update suggestions to be more generic
-            ((TextView) suggestion1.findViewById(R.id.suggestion_text1)).setText("Who won the last world cup?");
-            ((TextView) suggestion2.findViewById(R.id.suggestion_text2)).setText("Explain quantum computing in simple terms");
-            ((TextView) suggestion3.findViewById(R.id.suggestion_text3)).setText("What are some healthy dinner recipes?");
-            ((TextView) suggestion4.findViewById(R.id.suggestion_text4)).setText("Write a short story about a friendly robot");
+            String q1 = "Who won the last world cup?";
+            String q2 = "Explain quantum computing in simple terms";
+            String q3 = "What are some healthy dinner recipes?";
+            String q4 = "Write a short story about a friendly robot";
 
-            suggestion1.setOnClickListener(v -> {
-                if (listener != null) {
-                    listener.onSuggestionClick("Who won the last world cup?");
-                }
+            suggestionText1.setText(q1);
+            suggestionText2.setText(q2);
+            suggestionText3.setText(q3);
+            suggestionText4.setText(q4);
+
+            suggestionCard1.setOnClickListener(v -> {
+                if (listener != null) listener.onSuggestionClick(q1);
             });
-            suggestion2.setOnClickListener(v -> {
-                if (listener != null) {
-                    listener.onSuggestionClick("Explain quantum computing in simple terms");
-                }
+            suggestionCard2.setOnClickListener(v -> {
+                if (listener != null) listener.onSuggestionClick(q2);
             });
-            suggestion3.setOnClickListener(v -> {
-                if (listener != null) {
-                    listener.onSuggestionClick("What are some healthy dinner recipes?");
-                }
+            suggestionCard3.setOnClickListener(v -> {
+                if (listener != null) listener.onSuggestionClick(q3);
             });
-            suggestion4.setOnClickListener(v -> {
-                if (listener != null) {
-                    listener.onSuggestionClick("Write a short story about a friendly robot");
-                }
+            suggestionCard4.setOnClickListener(v -> {
+                if (listener != null) listener.onSuggestionClick(q4);
             });
         }
     }

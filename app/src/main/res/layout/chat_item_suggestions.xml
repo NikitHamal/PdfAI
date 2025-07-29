@@ -12,15 +12,13 @@
         android:layout_height="wrap_content"
         android:text="Hello! How can I help you?"
         android:textAppearance="?attr/textAppearanceHeadlineSmall"
-        android:textColor="@color/md_theme_light_onBackground"
         android:layout_marginBottom="8dp" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="I can help you create PDFs on any topic. Here are some suggestions:"
+        android:text="Here are some suggestions:"
         android:textAppearance="?attr/textAppearanceBodyMedium"
-        android:textColor="@color/md_theme_light_onBackground"
         android:layout_marginBottom="16dp" />
 
     <com.google.android.material.card.MaterialCardView
@@ -28,8 +26,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
-        app:cardCornerRadius="16dp"
-        app:cardBackgroundColor="@color/md_theme_light_surfaceContainer">
+        app:cardCornerRadius="16dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -42,17 +39,16 @@
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/icon_description_round"
-                android:tint="@color/md_theme_light_primary"
                 android:contentDescription="Description icon" />
 
             <TextView
+                android:id="@+id/suggestion_text1"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginStart="16dp"
-                android:text="Create a PDF about the hist..."
-                android:textAppearance="?attr/textAppearanceBodyMedium"
-                android:textColor="@color/md_theme_light_onSurfaceVariant" />
+                android:text="Suggestion 1"
+                android:textAppearance="?attr/textAppearanceBodyMedium" />
 
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
@@ -62,8 +58,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
-        app:cardCornerRadius="16dp"
-        app:cardBackgroundColor="@color/md_theme_light_surfaceContainer">
+        app:cardCornerRadius="16dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -76,17 +71,16 @@
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/icon_description_round"
-                android:tint="@color/md_theme_light_primary"
                 android:contentDescription="Description icon" />
 
             <TextView
+                android:id="@+id/suggestion_text2"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginStart="16dp"
-                android:text="Generate a PDF on the ben..."
-                android:textAppearance="?attr/textAppearanceBodyMedium"
-                android:textColor="@color/md_theme_light_onSurfaceVariant" />
+                android:text="Suggestion 2"
+                android:textAppearance="?attr/textAppearanceBodyMedium" />
 
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
@@ -96,8 +90,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
-        app:cardCornerRadius="16dp"
-        app:cardBackgroundColor="@color/md_theme_light_surfaceContainer">
+        app:cardCornerRadius="16dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -110,17 +103,16 @@
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/icon_description_round"
-                android:tint="@color/md_theme_light_primary"
                 android:contentDescription="Description icon" />
 
             <TextView
+                android:id="@+id/suggestion_text3"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginStart="16dp"
-                android:text="Make a PDF about the imp..."
-                android:textAppearance="?attr/textAppearanceBodyMedium"
-                android:textColor="@color/md_theme_light_onSurfaceVariant" />
+                android:text="Suggestion 3"
+                android:textAppearance="?attr/textAppearanceBodyMedium" />
 
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
@@ -129,8 +121,7 @@
         android:id="@+id/suggestion4"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:cardCornerRadius="16dp"
-        app:cardBackgroundColor="@color/md_theme_light_surfaceContainer">
+        app:cardCornerRadius="16dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -143,17 +134,16 @@
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/icon_description_round"
-                android:tint="@color/md_theme_light_primary"
                 android:contentDescription="Description icon" />
 
             <TextView
+                android:id="@+id/suggestion_text4"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginStart="16dp"
-                android:text="Create a PDF on the art of s..."
-                android:textAppearance="?attr/textAppearanceBodyMedium"
-                android:textColor="@color/md_theme_light_onSurfaceVariant" />
+                android:text="Suggestion 4"
+                android:textAppearance="?attr/textAppearanceBodyMedium" />
 
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
