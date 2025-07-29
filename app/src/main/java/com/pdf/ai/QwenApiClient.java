@@ -32,6 +32,7 @@ public class QwenApiClient {
     private static final String USER_AGENT = "Mozilla/5.0 (Linux; Android 12; itel A662LM) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Mobile Safari/537.36";
 
     private final OkHttpClient client;
+    private String currentParentId;
 
     public QwenApiClient() {
         client = new OkHttpClient.Builder()
@@ -44,7 +45,7 @@ public class QwenApiClient {
     public interface QwenApiCallback {
         void onSuccess(String response);
         void onFailure(String error);
-        void onStreamUpdate(String partialResponse);
+        void onStreamUpdate(String type, String content);
     }
 
     public interface NewChatCallback {
@@ -218,12 +219,25 @@ public class QwenApiClient {
         StringBuilder thinkingContent = new StringBuilder();
         StringBuilder answerContent = new StringBuilder();
         StringBuilder webSearchContent = new StringBuilder();
+        StringBuilder webSearchResults = new StringBuilder();
+        boolean hasFinished = false;
         
         for (String line : lines) {
             if (line.startsWith("data: ")) {
-                String jsonData = line.substring(6);
+                String jsonData = line.substring(6).trim();
+                if (jsonData.isEmpty()) continue;
+                
                 try {
                     JSONObject data = new JSONObject(jsonData);
+                    
+                    // Handle response creation
+                    if (data.has("response.created")) {
+                        JSONObject responseCreated = data.getJSONObject("response.created");
+                        if (responseCreated.has("response_id")) {
+                            currentParentId = responseCreated.getString("response_id");
+                        }
+                        continue;
+                    }
                     
                     if (data.has("choices")) {
                         JSONArray choices = data.getJSONArray("choices");
@@ -234,37 +248,64 @@ public class QwenApiClient {
                                 String content = delta.optString("content", "");
                                 String phase = delta.optString("phase", "");
                                 String status = delta.optString("status", "");
+                                String role = delta.optString("role", "");
                                 
+                                // Handle different phases
                                 switch (phase) {
                                     case "think":
                                         thinkingContent.append(content);
+                                        callback.onStreamUpdate("thinking", content);
                                         break;
                                     case "answer":
                                         answerContent.append(content);
+                                        callback.onStreamUpdate("answer", content);
                                         break;
                                     case "web_search":
-                                        webSearchContent.append(content);
+                                        // Handle web search function calls
+                                        if (delta.has("function_call")) {
+                                            JSONObject functionCall = delta.getJSONObject("function_call");
+                                            if ("web_search".equals(functionCall.optString("name"))) {
+                                                String arguments = functionCall.optString("arguments", "");
+                                                webSearchContent.append("Searching: ").append(arguments).append("\n");
+                                            }
+                                        }
                                         break;
                                 }
                                 
-                                // Send streaming update
-                                callback.onStreamUpdate(content);
+                                // Handle function role (for web search results)
+                                if ("function".equals(role) && "web_search".equals(delta.optString("name"))) {
+                                    if (delta.has("extra") && delta.getJSONObject("extra").has("web_search_info")) {
+                                        JSONArray searchInfo = delta.getJSONObject("extra").getJSONArray("web_search_info");
+                                        StringBuilder searchResults = new StringBuilder();
+                                        for (int i = 0; i < searchInfo.length(); i++) {
+                                            JSONObject result = searchInfo.getJSONObject(i);
+                                            searchResults.append("• ").append(result.optString("title", "")).append("\n");
+                                            searchResults.append("  ").append(result.optString("snippet", "")).append("\n");
+                                            searchResults.append("  Source: ").append(result.optString("url", "")).append("\n\n");
+                                        }
+                                        webSearchResults.append(searchResults.toString());
+                                    }
+                                }
                                 
                                 if ("finished".equals(status)) {
-                                    // Completion finished
-                                    String finalResponse = buildFinalResponse(thinkingContent.toString(), 
-                                                                           answerContent.toString(), 
-                                                                           webSearchContent.toString());
-                                    callback.onSuccess(finalResponse);
-                                    return;
+                                    hasFinished = true;
                                 }
                             }
                         }
                     }
                 } catch (JSONException e) {
-                    Log.w("QwenApiClient", "Failed to parse streaming data: " + e.getMessage());
+                    Log.w("QwenApiClient", "Failed to parse streaming data: " + jsonData + " - " + e.getMessage());
                 }
             }
+        }
+        
+        // Build final response after processing all data
+        if (hasFinished || (!thinkingContent.toString().isEmpty() || !answerContent.toString().isEmpty())) {
+            String finalWebSearch = webSearchContent.toString() + webSearchResults.toString();
+            String finalResponse = buildFinalResponse(thinkingContent.toString(), 
+                                                   answerContent.toString(), 
+                                                   finalWebSearch);
+            callback.onSuccess(finalResponse);
         }
     }
 
