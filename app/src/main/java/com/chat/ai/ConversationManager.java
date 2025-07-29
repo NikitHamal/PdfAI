@@ -1,4 +1,4 @@
-package com.pdf.ai;
+package com.chat.ai;
 
 import android.content.Context;
 import android.content.SharedPreferences;

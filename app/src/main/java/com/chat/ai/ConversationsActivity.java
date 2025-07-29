@@ -1,4 +1,4 @@
-package com.pdf.ai;
+package com.chat.ai;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -36,20 +36,41 @@ public class ConversationsActivity extends AppCompatActivity {
 
         conversationsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        // TODO: Replace with real data
-        List<String> conversations = new ArrayList<>();
+        loadConversations();
+
+        createNewFab.setOnClickListener(v -> {
+            // Clear the current conversation before starting a new one
+            new ConversationManager(this).clearCurrentConversation();
+            Intent intent = new Intent(this, ChatActivity.class);
+            startActivityForResult(intent, 1);
+        });
+    }
+
+    private void loadConversations() {
+        ConversationManager conversationManager = new ConversationManager(this);
+        List<ConversationManager.Conversation> conversations = conversationManager.getAllConversations();
+
         if (conversations.isEmpty()) {
             emptyState.setVisibility(View.VISIBLE);
             conversationsRecyclerView.setVisibility(View.GONE);
         } else {
             emptyState.setVisibility(View.GONE);
             conversationsRecyclerView.setVisibility(View.VISIBLE);
-            // conversationsRecyclerView.setAdapter(new ConversationsAdapter(conversations));
+            ConversationsAdapter adapter = new ConversationsAdapter(conversations, conversation -> {
+                conversationManager.saveCurrentConversationId(conversation.id);
+                Intent intent = new Intent(this, ChatActivity.class);
+                startActivityForResult(intent, 1);
+            });
+            conversationsRecyclerView.setAdapter(adapter);
         }
+    }
 
-        createNewFab.setOnClickListener(v -> {
-            startActivity(new Intent(this, com.pdf.ai.ChatActivity.class));
-        });
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 1) {
+            loadConversations();
+        }
     }
 
     @Override

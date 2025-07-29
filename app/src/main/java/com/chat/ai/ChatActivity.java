@@ -1,4 +1,4 @@
-package com.pdf.ai;
+package com.chat.ai;
 
 import android.content.Context;
 import android.net.Uri;
@@ -19,14 +19,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.pdf.ai.ChatMessage;
-import com.pdf.ai.OutlineData;
-import com.pdf.ai.GeminiApiClient;
-import com.pdf.ai.QwenApiClient;
-import com.pdf.ai.ModelSelectorComponent;
-import com.pdf.ai.PdfGenerator;
-import com.pdf.ai.DialogManager;
-import com.pdf.ai.PreferencesManager;
+import com.chat.ai.ChatMessage;
+import com.chat.ai.OutlineData;
+import com.chat.ai.GeminiApiClient;
+import com.chat.ai.QwenApiClient;
+import com.chat.ai.ModelSelectorComponent;
+import com.chat.ai.DialogManager;
+import com.chat.ai.PreferencesManager;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.materialswitch.MaterialSwitch;
 
@@ -70,7 +69,6 @@ public class ChatActivity extends AppCompatActivity implements
     private GeminiApiClient geminiApiClient;
     private QwenApiClient qwenApiClient;
     private ModelSelectorComponent modelSelectorComponent;
-    private PdfGenerator pdfGenerator;
     private DialogManager dialogManager;
     private InstructionManager instructionManager;
     private ConversationManager conversationManager;
@@ -95,7 +93,6 @@ public class ChatActivity extends AppCompatActivity implements
         preferencesManager = new PreferencesManager(this);
         geminiApiClient = new GeminiApiClient();
         qwenApiClient = new QwenApiClient();
-        pdfGenerator = new PdfGenerator(this);
         dialogManager = new DialogManager(this, preferencesManager);
         instructionManager = new InstructionManager(this);
         conversationManager = new ConversationManager(this);
@@ -290,11 +287,7 @@ public class ChatActivity extends AppCompatActivity implements
         Map<String, QwenApiClient.ModelInfo> models = QwenApiClient.getAvailableModels();
         QwenApiClient.ModelInfo modelInfo = models.get(selectedModel);
         
-        if (modelInfo != null && modelInfo.isQwenModel) {
-            handleQwenMessage(message);
-        } else {
-            startOutlineGeneration(message);
-        }
+        handleQwenMessage(message);
     }
 
     private void handleQwenMessage(String message) {
@@ -326,97 +319,6 @@ public class ChatActivity extends AppCompatActivity implements
         }
     }
     
-    private boolean isOutlineRequest(String message) {
-        String lowerMessage = message.toLowerCase();
-        return lowerMessage.contains("outline") || lowerMessage.contains("pdf") || 
-               lowerMessage.contains("document") || lowerMessage.contains("write about") ||
-               lowerMessage.contains("create") || lowerMessage.contains("generate");
-    }
-    
-    private void startQwenOutlineGeneration(String message) {
-        Map<String, QwenApiClient.ModelInfo> models = QwenApiClient.getAvailableModels();
-        QwenApiClient.ModelInfo modelInfo = models.get(selectedModel);
-        boolean isQwenModel = modelInfo != null && modelInfo.isQwenModel;
-        
-        String enhancedPrompt = instructionManager.getOutlineGenerationInstructions(message, isQwenModel);
-        
-        if (currentChatId == null) {
-            qwenApiClient.createNewChat("New Chat", new String[]{selectedModel}, new QwenApiClient.NewChatCallback() {
-                @Override
-                public void onSuccess(String chatId) {
-                    currentChatId = chatId;
-                    conversationManager.setQwenChatId(chatId);
-                    sendQwenOutlineRequest(enhancedPrompt);
-                }
-
-                @Override
-                public void onFailure(String error) {
-                    runOnUiThread(() -> {
-                        Toast.makeText(ChatActivity.this, "Failed to create chat: " + error, Toast.LENGTH_SHORT).show();
-                    });
-                }
-            });
-        } else {
-            sendQwenOutlineRequest(enhancedPrompt);
-        }
-    }
-    
-    private void sendQwenOutlineRequest(String enhancedPrompt) {
-        runOnUiThread(() -> showProgressMessage("Generating outline...", 0));
-        
-        qwenApiClient.sendCompletion(currentChatId, selectedModel, enhancedPrompt, currentParentId, 
-                thinkingEnabled, false, new QwenApiClient.QwenApiCallback() {
-            @Override
-            public void onSuccess(String response) {
-                runOnUiThread(() -> {
-                    removeProgressMessage();
-                    try {
-                        JSONObject responseObj = new JSONObject(response);
-                        String answer = responseObj.optString("answer", "");
-                        String thinking = responseObj.optString("thinking", "");
-                        
-                        // Try to extract JSON from the answer
-                        OutlineData outlineData = parseOutlineFromResponse(answer);
-                        if (outlineData != null) {
-                            currentOutlineData = outlineData;
-                            ChatMessage outlineMessage = new ChatMessage(ChatMessage.TYPE_OUTLINE, answer, null, outlineData);
-                            if (!thinking.isEmpty()) {
-                                outlineMessage.setThinkingContent(thinking);
-                            }
-                            chatMessages.add(outlineMessage);
-                            messageAdapter.notifyItemInserted(chatMessages.size() - 1);
-                            chatRecyclerView.scrollToPosition(chatMessages.size() - 1);
-                        } else {
-                            // Fallback to regular message if outline parsing fails
-                            ChatMessage aiMessage = new ChatMessage(ChatMessage.TYPE_AI, answer, null, null);
-                            if (!thinking.isEmpty()) {
-                                aiMessage.setThinkingContent(thinking);
-                            }
-                            chatMessages.add(aiMessage);
-                            messageAdapter.notifyItemInserted(chatMessages.size() - 1);
-                            chatRecyclerView.scrollToPosition(chatMessages.size() - 1);
-                        }
-                        saveChatHistory();
-                    } catch (JSONException e) {
-                        Toast.makeText(ChatActivity.this, "Error parsing response", Toast.LENGTH_SHORT).show();
-                    }
-                });
-            }
-
-            @Override
-            public void onFailure(String error) {
-                runOnUiThread(() -> {
-                    removeProgressMessage();
-                    Toast.makeText(ChatActivity.this, "Error: " + error, Toast.LENGTH_SHORT).show();
-                });
-            }
-
-            @Override
-            public void onStreamUpdate(String type, String content) {
-                // Handle streaming updates if needed
-            }
-        });
-    }
 
     private void sendQwenCompletion(String message) {
         runOnUiThread(() -> showProgressMessage("Sending request...", 0));
@@ -506,111 +408,6 @@ public class ChatActivity extends AppCompatActivity implements
         updateEmptyState();
     }
 
-    private void startOutlineGeneration(String userPrompt) {
-        showProgressMessage("Sending request...", 0);
-        callGeminiForOutline(userPrompt);
-    }
-
-    private void callGeminiForOutline(String userPrompt) {
-        if (geminiApiKey == null || geminiApiKey.isEmpty()) {
-            Toast.makeText(this, "Gemini API Key is not set. Please set it in settings.", Toast.LENGTH_LONG).show();
-            updateProgressMessage("Error: API Key missing.", 0);
-            return;
-        }
-
-        // Use enhanced instructions for Gemini models
-        String enhancedPrompt = instructionManager.getOutlineGenerationInstructions(userPrompt, false);
-
-        geminiApiClient.generateOutline(enhancedPrompt, geminiApiKey, selectedModel, new GeminiApiClient.GeminiApiCallback() {
-            @Override
-            public void onSuccess(String response) {
-                runOnUiThread(() -> {
-                    try {
-                        JSONObject jsonResponse = new JSONObject(response);
-                        String outlineText = jsonResponse.getJSONArray("candidates")
-                                .getJSONObject(0)
-                                .getJSONObject("content")
-                                .getJSONArray("parts")
-                                .getJSONObject(0)
-                                .getString("text");
-
-                        String cleanedJson = cleanJson(outlineText);
-                        JSONObject outlineJson = new JSONObject(cleanedJson);
-                        String pdfTitle = outlineJson.getString("title");
-                        JSONArray sectionsArray = outlineJson.getJSONArray("sections");
-                        List<String> sections = new ArrayList<>();
-                        for (int i = 0; i < sectionsArray.length(); i++) {
-                            sections.add(sectionsArray.getJSONObject(i).getString("section_title"));
-                        }
-                        currentOutlineData = new OutlineData(pdfTitle, sections);
-
-                        removeProgressMessage();
-                        showOutlineInChat(currentOutlineData);
-                    } catch (JSONException e) {
-                        updateProgressMessage("Failed to parse outline: " + e.getMessage(), 0);
-                        Log.e("GeminiAPI", "Failed to parse outline JSON", e);
-                    }
-                });
-            }
-
-            @Override
-            public void onFailure(String error) {
-                runOnUiThread(() -> {
-                    updateProgressMessage("Failed to generate outline: " + error, 0);
-                    Log.e("GeminiAPI", "Outline generation failed", new Exception(error));
-                });
-            }
-        });
-    }
-
-    private void showOutlineInChat(OutlineData outlineData) {
-        chatMessages.add(new ChatMessage(ChatMessage.TYPE_OUTLINE, null, null, outlineData));
-        messageAdapter.notifyItemInserted(chatMessages.size() - 1);
-        chatRecyclerView.scrollToPosition(chatMessages.size() - 1);
-        updateEmptyState();
-        saveChatHistory();
-    }
-
-    // Placeholder methods for interface implementation
-    @Override
-    public void onApproveOutline(OutlineData outlineData) {
-        if (isGeneratingPdf) return;
-        isGeneratingPdf = true;
-        String pdfTitle = outlineData.getPdfTitle();
-        List<String> sectionsContent = new ArrayList<>();
-        // Fill sectionsContent with empty strings for each section (or fetch real content if available)
-        for (int i = 0; i < outlineData.getSections().size(); i++) {
-            sectionsContent.add("");
-        }
-        pdfGenerator.createPdf(pdfTitle, outlineData, sectionsContent, new PdfGenerator.PdfGenerationCallback() {
-            @Override
-            public void onPdfGenerated(String filePath, String pdfTitle) {
-                isGeneratingPdf = false;
-                runOnUiThread(() -> {
-                    Toast.makeText(ChatActivity.this, "PDF generated: " + filePath, Toast.LENGTH_LONG).show();
-                    // Optionally, show a dialog or open the PDF
-                });
-            }
-            @Override
-            public void onPdfGenerationFailed(String error) {
-                isGeneratingPdf = false;
-                runOnUiThread(() -> {
-                    Toast.makeText(ChatActivity.this, "PDF generation failed: " + error, Toast.LENGTH_LONG).show();
-                });
-            }
-        });
-    }
-
-    @Override
-    public void onDiscardOutline(int position) {
-        // Remove the outline message from the chat
-        if (position >= 0 && position < chatMessages.size()) {
-            chatMessages.remove(position);
-            messageAdapter.notifyItemRemoved(position);
-            updateEmptyState();
-            saveChatHistory();
-        }
-    }
 
     @Override
     public void onSuggestionClick(String suggestion) {
@@ -619,9 +416,6 @@ public class ChatActivity extends AppCompatActivity implements
     }
 
     // Helper methods
-    private String cleanJson(String jsonString) {
-        return jsonString.replaceAll("```json\\n?", "").replaceAll("```\\n?", "").trim();
-    }
 
     private void initializeConversation() {
         // Check if we have an existing conversation or start a new one
@@ -684,41 +478,6 @@ public class ChatActivity extends AppCompatActivity implements
         }
     }
 
-    private OutlineData parseOutlineFromResponse(String response) {
-        try {
-            // Try to extract JSON from the response
-            if (response.contains("{") && response.contains("}")) {
-                int startIndex = response.indexOf("{");
-                int endIndex = response.lastIndexOf("}");
-                if (startIndex != -1 && endIndex != -1 && endIndex > startIndex) {
-                    String jsonPart = response.substring(startIndex, endIndex + 1);
-                    
-                    JSONObject jsonObject = new JSONObject(jsonPart);
-                    
-                    String title = jsonObject.optString("title", "Untitled Document");
-                    JSONArray sectionsArray = jsonObject.optJSONArray("sections");
-                    
-                    if (sectionsArray != null) {
-                        List<String> sections = new ArrayList<>();
-                        for (int i = 0; i < sectionsArray.length(); i++) {
-                            JSONObject sectionObj = sectionsArray.optJSONObject(i);
-                            if (sectionObj != null) {
-                                String sectionTitle = sectionObj.optString("section_title", "Section " + (i + 1));
-                                sections.add(sectionTitle);
-                            }
-                        }
-                        
-                        if (!sections.isEmpty()) {
-                            return new OutlineData(title, sections);
-                        }
-                    }
-                }
-            }
-        } catch (JSONException e) {
-            Log.e(TAG, "Error parsing outline from response", e);
-        }
-        return null;
-    }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {

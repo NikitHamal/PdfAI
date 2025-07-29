@@ -17,8 +17,8 @@ android {
     }
 
 	defaultConfig {
-		applicationId "com.pdf.ai"
-		namespace "com.pdf.ai"
+		applicationId "com.chat.ai"
+		namespace "com.chat.ai"
 		minSdkVersion 21
 		targetSdkVersion 34
 		versionCode 1
