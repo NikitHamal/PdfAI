@@ -448,7 +448,18 @@ public class ChatActivity extends AppCompatActivity implements
     }
 
     @Override
-    public void onSuggestionClicked(String suggestion) {
+    public void onDiscardOutline(int position) {
+        // Remove the outline message from the chat
+        if (position >= 0 && position < chatMessages.size()) {
+            chatMessages.remove(position);
+            messageAdapter.notifyItemRemoved(position);
+            updateEmptyState();
+            saveChatHistory();
+        }
+    }
+
+    @Override
+    public void onSuggestionClick(String suggestion) {
         messageEditText.setText(suggestion);
         sendUserMessage(suggestion);
     }
