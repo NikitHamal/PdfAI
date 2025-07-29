@@ -12,6 +12,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.Toast;
+import android.view.MenuItem;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -71,12 +72,15 @@ public class ChatActivity extends AppCompatActivity implements
     private ModelSelectorComponent modelSelectorComponent;
     private PdfGenerator pdfGenerator;
     private DialogManager dialogManager;
+    private InstructionManager instructionManager;
+    private ConversationManager conversationManager;
 
     private OutlineData currentOutlineData;
     private boolean isGeneratingPdf = false;
     private List<String> currentPdfSectionsContent;
     private String currentChatId;
     private String currentParentId;
+    private ConversationManager.Conversation currentConversation;
 
     // Executor Service for background tasks
     private ExecutorService executorService;
@@ -91,6 +95,8 @@ public class ChatActivity extends AppCompatActivity implements
         qwenApiClient = new QwenApiClient();
         pdfGenerator = new PdfGenerator(this);
         dialogManager = new DialogManager(this, preferencesManager);
+        instructionManager = new InstructionManager(this);
+        conversationManager = new ConversationManager(this);
 
         geminiApiKey = preferencesManager.getGeminiApiKey();
         selectedModel = preferencesManager.getSelectedModel();
@@ -100,11 +106,17 @@ public class ChatActivity extends AppCompatActivity implements
         setupRecyclerView();
         setupInputListeners();
         
-        loadChatHistory();
+        initializeConversation();
         updateEmptyState();
 
         // Initialize the ExecutorService
         executorService = Executors.newSingleThreadExecutor();
+        
+        // Setup back button support
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
     }
 
     private void initViews() {
@@ -265,7 +277,9 @@ public class ChatActivity extends AppCompatActivity implements
             messageAdapter.notifyItemRemoved(0);
         }
 
-        chatMessages.add(new ChatMessage(ChatMessage.TYPE_USER, message, null, null));
+        ChatMessage userMessage = new ChatMessage(ChatMessage.TYPE_USER, message, null, null);
+        chatMessages.add(userMessage);
+        saveConversationMessage(userMessage);
         messageAdapter.notifyItemInserted(chatMessages.size() - 1);
         chatRecyclerView.scrollToPosition(chatMessages.size() - 1);
         updateEmptyState();
@@ -282,13 +296,55 @@ public class ChatActivity extends AppCompatActivity implements
     }
 
     private void handleQwenMessage(String message) {
+        // Check if this looks like an outline generation request
+        if (isOutlineRequest(message)) {
+            startQwenOutlineGeneration(message);
+        } else {
+            // Handle as regular chat with enhanced instructions
+            if (currentChatId == null) {
+                // Create new chat first
+                qwenApiClient.createNewChat("New Chat", new String[]{selectedModel}, new QwenApiClient.NewChatCallback() {
+                                    @Override
+                public void onSuccess(String chatId) {
+                    currentChatId = chatId;
+                    conversationManager.setQwenChatId(chatId);
+                    sendQwenCompletion(message);
+                }
+
+                    @Override
+                    public void onFailure(String error) {
+                        runOnUiThread(() -> {
+                            Toast.makeText(ChatActivity.this, "Failed to create chat: " + error, Toast.LENGTH_SHORT).show();
+                        });
+                    }
+                });
+            } else {
+                sendQwenCompletion(message);
+            }
+        }
+    }
+    
+    private boolean isOutlineRequest(String message) {
+        String lowerMessage = message.toLowerCase();
+        return lowerMessage.contains("outline") || lowerMessage.contains("pdf") || 
+               lowerMessage.contains("document") || lowerMessage.contains("write about") ||
+               lowerMessage.contains("create") || lowerMessage.contains("generate");
+    }
+    
+    private void startQwenOutlineGeneration(String message) {
+        Map<String, QwenApiClient.ModelInfo> models = QwenApiClient.getAvailableModels();
+        QwenApiClient.ModelInfo modelInfo = models.get(selectedModel);
+        boolean isQwenModel = modelInfo != null && modelInfo.isQwenModel;
+        
+        String enhancedPrompt = instructionManager.getOutlineGenerationInstructions(message, isQwenModel);
+        
         if (currentChatId == null) {
-            // Create new chat first
             qwenApiClient.createNewChat("New Chat", new String[]{selectedModel}, new QwenApiClient.NewChatCallback() {
                 @Override
                 public void onSuccess(String chatId) {
                     currentChatId = chatId;
-                    sendQwenCompletion(message);
+                    conversationManager.setQwenChatId(chatId);
+                    sendQwenOutlineRequest(enhancedPrompt);
                 }
 
                 @Override
@@ -299,14 +355,74 @@ public class ChatActivity extends AppCompatActivity implements
                 }
             });
         } else {
-            sendQwenCompletion(message);
+            sendQwenOutlineRequest(enhancedPrompt);
         }
+    }
+    
+    private void sendQwenOutlineRequest(String enhancedPrompt) {
+        runOnUiThread(() -> showProgressMessage("Generating outline...", 0));
+        
+        qwenApiClient.sendCompletion(currentChatId, selectedModel, enhancedPrompt, currentParentId, 
+                thinkingEnabled, false, new QwenApiClient.QwenApiCallback() {
+            @Override
+            public void onSuccess(String response) {
+                runOnUiThread(() -> {
+                    removeProgressMessage();
+                    try {
+                        JSONObject responseObj = new JSONObject(response);
+                        String answer = responseObj.optString("answer", "");
+                        String thinking = responseObj.optString("thinking", "");
+                        
+                        // Try to extract JSON from the answer
+                        OutlineData outlineData = parseOutlineFromResponse(answer);
+                        if (outlineData != null) {
+                            currentOutlineData = outlineData;
+                            ChatMessage outlineMessage = new ChatMessage(ChatMessage.TYPE_OUTLINE, answer, null, outlineData);
+                            if (!thinking.isEmpty()) {
+                                outlineMessage.setThinkingContent(thinking);
+                            }
+                            chatMessages.add(outlineMessage);
+                            messageAdapter.notifyItemInserted(chatMessages.size() - 1);
+                            chatRecyclerView.scrollToPosition(chatMessages.size() - 1);
+                        } else {
+                            // Fallback to regular message if outline parsing fails
+                            ChatMessage aiMessage = new ChatMessage(ChatMessage.TYPE_AI, answer, null, null);
+                            if (!thinking.isEmpty()) {
+                                aiMessage.setThinkingContent(thinking);
+                            }
+                            chatMessages.add(aiMessage);
+                            messageAdapter.notifyItemInserted(chatMessages.size() - 1);
+                            chatRecyclerView.scrollToPosition(chatMessages.size() - 1);
+                        }
+                        saveChatHistory();
+                    } catch (JSONException e) {
+                        Toast.makeText(ChatActivity.this, "Error parsing response", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(String error) {
+                runOnUiThread(() -> {
+                    removeProgressMessage();
+                    Toast.makeText(ChatActivity.this, "Error: " + error, Toast.LENGTH_SHORT).show();
+                });
+            }
+
+            @Override
+            public void onStreamUpdate(String type, String content) {
+                // Handle streaming updates if needed
+            }
+        });
     }
 
     private void sendQwenCompletion(String message) {
         runOnUiThread(() -> showProgressMessage("Sending request...", 0));
         
-        qwenApiClient.sendCompletion(currentChatId, selectedModel, message, currentParentId, 
+        // Use enhanced instructions for better responses
+        String enhancedMessage = instructionManager.getGeneralChatInstructions(message, thinkingEnabled, webSearchEnabled);
+        
+        qwenApiClient.sendCompletion(currentChatId, selectedModel, enhancedMessage, currentParentId, 
                 thinkingEnabled, webSearchEnabled, new QwenApiClient.QwenApiCallback() {
             @Override
             public void onSuccess(String response) {
@@ -328,9 +444,9 @@ public class ChatActivity extends AppCompatActivity implements
                         }
                         
                         chatMessages.add(aiMessage);
+                        saveConversationMessage(aiMessage);
                         messageAdapter.notifyItemInserted(chatMessages.size() - 1);
                         chatRecyclerView.scrollToPosition(chatMessages.size() - 1);
-                        saveChatHistory();
                     } catch (JSONException e) {
                         runOnUiThread(() -> Toast.makeText(ChatActivity.this, "Error parsing response", Toast.LENGTH_SHORT).show());
                     }
@@ -346,7 +462,7 @@ public class ChatActivity extends AppCompatActivity implements
             }
 
             @Override
-            public void onStreamUpdate(String partialResponse) {
+            public void onStreamUpdate(String type, String content) {
                 runOnUiThread(() -> {
                     // Could be used for streaming updates in the future
                 });
@@ -400,7 +516,10 @@ public class ChatActivity extends AppCompatActivity implements
             return;
         }
 
-        geminiApiClient.generateOutline(userPrompt, geminiApiKey, selectedModel, new GeminiApiClient.GeminiApiCallback() {
+        // Use enhanced instructions for Gemini models
+        String enhancedPrompt = instructionManager.getOutlineGenerationInstructions(userPrompt, false);
+
+        geminiApiClient.generateOutline(enhancedPrompt, geminiApiKey, selectedModel, new GeminiApiClient.GeminiApiCallback() {
             @Override
             public void onSuccess(String response) {
                 runOnUiThread(() -> {
@@ -478,11 +597,109 @@ public class ChatActivity extends AppCompatActivity implements
         return jsonString.replaceAll("```json\\n?", "").replaceAll("```\\n?", "").trim();
     }
 
-    private void loadChatHistory() {
-        // Implementation for loading chat history...
+    private void initializeConversation() {
+        // Check if we have an existing conversation or start a new one
+        String conversationId = conversationManager.getCurrentConversationId();
+        if (conversationId != null) {
+            currentConversation = conversationManager.loadConversation(conversationId);
+            if (currentConversation != null) {
+                loadConversationMessages();
+                
+                // Restore Qwen session data if needed
+                if (currentConversation.isQwenConversation) {
+                    currentChatId = conversationManager.getQwenChatId();
+                    currentParentId = conversationManager.getQwenParentId();
+                }
+                return;
+            }
+        }
+        
+        // Start new conversation
+        startNewConversation();
+    }
+    
+    private void startNewConversation() {
+        currentConversation = conversationManager.startNewConversation("New Chat", selectedModel);
+        chatMessages.clear();
+        messageAdapter.notifyDataSetChanged();
+        
+        // Clear Qwen session data for new conversation
+        currentChatId = null;
+        currentParentId = null;
+        
+        addWelcomeMessage();
+    }
+    
+    private void loadConversationMessages() {
+        if (currentConversation != null && currentConversation.messages != null) {
+            chatMessages.clear();
+            chatMessages.addAll(currentConversation.messages);
+            messageAdapter.notifyDataSetChanged();
+            
+            if (!chatMessages.isEmpty()) {
+                chatRecyclerView.scrollToPosition(chatMessages.size() - 1);
+            } else {
+                addWelcomeMessage();
+            }
+        }
     }
 
+    private void saveConversationMessage(ChatMessage message) {
+        if (currentConversation != null) {
+            currentConversation.addMessage(message);
+            conversationManager.saveConversation(currentConversation);
+        }
+    }
+    
     private void saveChatHistory() {
-        // Implementation for saving chat history...
+        // Save current conversation
+        if (currentConversation != null) {
+            conversationManager.saveConversation(currentConversation);
+        }
+    }
+
+    private OutlineData parseOutlineFromResponse(String response) {
+        try {
+            // Try to extract JSON from the response
+            if (response.contains("{") && response.contains("}")) {
+                int startIndex = response.indexOf("{");
+                int endIndex = response.lastIndexOf("}");
+                if (startIndex != -1 && endIndex != -1 && endIndex > startIndex) {
+                    String jsonPart = response.substring(startIndex, endIndex + 1);
+                    
+                    JSONObject jsonObject = new JSONObject(jsonPart);
+                    
+                    String title = jsonObject.optString("title", "Untitled Document");
+                    JSONArray sectionsArray = jsonObject.optJSONArray("sections");
+                    
+                    if (sectionsArray != null) {
+                        List<String> sections = new ArrayList<>();
+                        for (int i = 0; i < sectionsArray.length(); i++) {
+                            JSONObject sectionObj = sectionsArray.optJSONObject(i);
+                            if (sectionObj != null) {
+                                String sectionTitle = sectionObj.optString("section_title", "Section " + (i + 1));
+                                sections.add(sectionTitle);
+                            }
+                        }
+                        
+                        if (!sections.isEmpty()) {
+                            return new OutlineData(title, sections);
+                        }
+                    }
+                }
+            }
+        } catch (JSONException e) {
+            Log.e(TAG, "Error parsing outline from response", e);
+        }
+        return null;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            onBackPressed();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 }

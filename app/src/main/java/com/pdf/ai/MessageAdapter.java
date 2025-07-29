@@ -227,7 +227,7 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             addSectionButton = itemView.findViewById(R.id.add_section_button);
             discardButton = itemView.findViewById(R.id.discard_button);
             approveButton = itemView.findViewById(R.id.approve_button);
-            addTitleSectionButton = itemView.findViewById(R.id.add_title_section);
+            addTitleSectionButton = itemView.findViewById(R.id.title_ai_enhance);
         }
 
         void bind(ChatMessage message) {
