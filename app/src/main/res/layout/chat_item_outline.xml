@@ -157,7 +157,6 @@
                     android:layout_height="wrap_content"
                     android:text="0 sections"
                     android:textAppearance="?attr/textAppearanceBodySmall"
-                    android:textColor="@color/md_theme_light_onSurfaceVariant"
                     android:background="@drawable/pill_background"
                     android:backgroundTint="@color/md_theme_light_secondaryContainer"
                     android:textColor="@color/md_theme_light_onSecondaryContainer"
