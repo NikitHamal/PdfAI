@@ -12,6 +12,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.Toast;
+import android.view.MenuItem;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -376,7 +377,7 @@ public class ChatActivity extends AppCompatActivity implements
                         OutlineData outlineData = parseOutlineFromResponse(answer);
                         if (outlineData != null) {
                             currentOutlineData = outlineData;
-                            ChatMessage outlineMessage = new ChatMessage(ChatMessage.TYPE_OUTLINE, answer, outlineData, null);
+                            ChatMessage outlineMessage = new ChatMessage(ChatMessage.TYPE_OUTLINE, answer, null, outlineData);
                             if (!thinking.isEmpty()) {
                                 outlineMessage.setThinkingContent(thinking);
                             }
@@ -655,6 +656,42 @@ public class ChatActivity extends AppCompatActivity implements
         if (currentConversation != null) {
             conversationManager.saveConversation(currentConversation);
         }
+    }
+
+    private OutlineData parseOutlineFromResponse(String response) {
+        try {
+            // Try to extract JSON from the response
+            if (response.contains("{") && response.contains("}")) {
+                int startIndex = response.indexOf("{");
+                int endIndex = response.lastIndexOf("}");
+                if (startIndex != -1 && endIndex != -1 && endIndex > startIndex) {
+                    String jsonPart = response.substring(startIndex, endIndex + 1);
+                    
+                    JSONObject jsonObject = new JSONObject(jsonPart);
+                    
+                    String title = jsonObject.optString("title", "Untitled Document");
+                    JSONArray sectionsArray = jsonObject.optJSONArray("sections");
+                    
+                    if (sectionsArray != null) {
+                        List<String> sections = new ArrayList<>();
+                        for (int i = 0; i < sectionsArray.length(); i++) {
+                            JSONObject sectionObj = sectionsArray.optJSONObject(i);
+                            if (sectionObj != null) {
+                                String sectionTitle = sectionObj.optString("section_title", "Section " + (i + 1));
+                                sections.add(sectionTitle);
+                            }
+                        }
+                        
+                        if (!sections.isEmpty()) {
+                            return new OutlineData(title, sections);
+                        }
+                    }
+                }
+            }
+        } catch (JSONException e) {
+            Log.e(TAG, "Error parsing outline from response", e);
+        }
+        return null;
     }
 
     @Override

@@ -91,9 +91,9 @@ public class ConversationManager {
             // Use first user message as title if title is generic
             if (title == null || title.equals("New Chat") || title.isEmpty()) {
                 for (ChatMessage msg : messages) {
-                    if (msg.getType() == ChatMessage.TYPE_USER && !msg.getContent().isEmpty()) {
-                        this.title = msg.getContent().length() > 50 ? 
-                            msg.getContent().substring(0, 47) + "..." : msg.getContent();
+                    if (msg.getType() == ChatMessage.TYPE_USER && !msg.getMessage().isEmpty()) {
+                        this.title = msg.getMessage().length() > 50 ? 
+                            msg.getMessage().substring(0, 47) + "..." : msg.getMessage();
                         break;
                     }
                 }
