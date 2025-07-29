@@ -130,7 +130,7 @@ public class ConversationManager {
     /**
      * Save current conversation ID
      */
-    private void saveCurrentConversationId(String conversationId) {
+    public void saveCurrentConversationId(String conversationId) {
         prefs.edit().putString(KEY_CURRENT_CONVERSATION_ID, conversationId).apply();
     }
     
