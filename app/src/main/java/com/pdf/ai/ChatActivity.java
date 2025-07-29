@@ -220,6 +220,13 @@ public class ChatActivity extends AppCompatActivity implements
             webSearchSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 webSearchEnabled = isChecked && currentModel.supportsWebSearch;
             });
+        } else {
+            // Handle the case where the model is not found
+            thinkingSwitch.setEnabled(false);
+            webSearchSwitch.setEnabled(false);
+            thinkingSwitch.setChecked(false);
+            webSearchSwitch.setChecked(false);
+            compatibilityNote.setText("Note: Selected model not found. Features disabled.");
         }
 
         bottomSheetDialog.show();
@@ -325,7 +332,7 @@ public class ChatActivity extends AppCompatActivity implements
                         chatRecyclerView.scrollToPosition(chatMessages.size() - 1);
                         saveChatHistory();
                     } catch (JSONException e) {
-                        Toast.makeText(ChatActivity.this, "Error parsing response", Toast.LENGTH_SHORT).show();
+                        runOnUiThread(() -> Toast.makeText(ChatActivity.this, "Error parsing response", Toast.LENGTH_SHORT).show());
                     }
                 });
             }
@@ -340,7 +347,9 @@ public class ChatActivity extends AppCompatActivity implements
 
             @Override
             public void onStreamUpdate(String partialResponse) {
-                // Could be used for streaming updates in the future
+                runOnUiThread(() -> {
+                    // Could be used for streaming updates in the future
+                });
             }
         });
     }

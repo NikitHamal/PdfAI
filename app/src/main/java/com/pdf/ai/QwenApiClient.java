@@ -285,25 +285,25 @@ public class QwenApiClient {
     // Get available models (this would be hardcoded based on the documentation)
     public static Map<String, ModelInfo> getAvailableModels() {
         Map<String, ModelInfo> models = new HashMap<>();
-        
-        // Qwen models from documentation
-        models.put("qwen3-235b-a22b", new ModelInfo("Qwen3-235B-A22B-2507", "The most powerful mixture-of-experts language model", true, true, true));
-        models.put("qwen3-30b-a3b", new ModelInfo("Qwen3-30B-A3B", "A compact and high-performance Mixture of Experts (MoE) model", true, true, true));
-        models.put("qwen3-32b", new ModelInfo("Qwen3-32B", "The most powerful dense model", true, true, true));
-        models.put("qwen-max-latest", new ModelInfo("Qwen2.5-Max", "The most powerful language model in the Qwen series", true, false, true));
-        models.put("qwen-plus-2025-01-25", new ModelInfo("Qwen2.5-Plus", "Capable of complex tasks", true, false, true));
-        models.put("qwq-32b", new ModelInfo("QwQ-32B", "Capable of thinking and reasoning", false, false, false));
-        models.put("qwen-turbo-2025-02-11", new ModelInfo("Qwen2.5-Turbo", "Fast and 1M-token context", true, false, true));
-        models.put("qwen3-coder-plus", new ModelInfo("Qwen3-Coder", "A strong coding agent capable of long-horizon tasks", true, true, true));
-        
+
+        models.put("qwen3-coder-plus", new ModelInfo("Qwen3-Coder", "A strong coding agent capable of long-horizon tasks", true, true, true, true, true, true, true, true));
+        models.put("qwen3-235b-a22b", new ModelInfo("Qwen3-235B-A22B-2507", "The most powerful mixture-of-experts language model", true, true, true, true, true, true, true, true));
+        models.put("qwen3-30b-a3b", new ModelInfo("Qwen3-30B-A3B", "A compact and high-performance Mixture of Experts (MoE) model", true, true, true, true, true, true, true, true));
+        models.put("qwen3-32b", new ModelInfo("Qwen3-32B", "The most powerful dense model", true, true, true, true, true, true, true, true));
+        models.put("qwen-max-latest", new ModelInfo("Qwen2.5-Max", "The most powerful language model in the Qwen series", true, true, true, true, true, true, false, true));
+        models.put("qwen-plus-2025-01-25", new ModelInfo("Qwen2.5-Plus", "Capable of complex tasks", true, true, true, true, true, true, false, true));
+        models.put("qwq-32b", new ModelInfo("QwQ-32B", "Capable of thinking and reasoning", false, true, false, false, false, false, false, false));
+        models.put("qwen-turbo-2025-02-11", new ModelInfo("Qwen2.5-Turbo", "Fast and 1M-token context", true, true, true, true, true, true, false, true));
+        models.put("qwen2.5-omni-7b", new ModelInfo("Qwen2.5-Omni-7B", "Omni model supporting voice chat and video chat", true, true, true, true, true, false, false, true));
+        models.put("qvq-72b-preview-0310", new ModelInfo("QVQ-Max", "Powerful visual reasoning model", true, true, true, true, true, false, false, true));
+        models.put("qwen2.5-vl-32b-instruct", new ModelInfo("Qwen2.5-VL-32B-Instruct", "Second-largest vision-language model", true, true, true, true, true, false, false, true));
+        models.put("qwen2.5-14b-instruct-1m", new ModelInfo("Qwen2.5-14B-Instruct-1M", "Long-context open model", true, true, true, true, true, false, false, true));
+        models.put("qwen2.5-coder-32b-instruct", new ModelInfo("Qwen2.5-Coder-32B-Instruct", "Strong at coding tasks", true, true, true, true, true, false, false, true));
+        models.put("qwen2.5-72b-instruct", new ModelInfo("Qwen2.5-72B-Instruct", "Smart large language model", true, true, true, true, true, false, false, true));
+
         // Gemini models (existing ones - these don't support thinking/web search)
-        models.put("gemini-1.5-flash-latest", new ModelInfo("Gemini 1.5 Flash Latest", "Fast and efficient", false, false, false));
-        models.put("gemini-1.5-pro-latest", new ModelInfo("Gemini 1.5 Pro Latest", "Most capable model", false, false, false));
-        models.put("gemini-2.5-flash-lite-preview-06-17", new ModelInfo("Gemini 2.5 Flash Lite Preview", "Lightweight version", false, false, false));
-        models.put("gemini-2.5-flash", new ModelInfo("Gemini 2.5 Flash", "Fast responses", false, false, false));
-        models.put("gemini-2.5-pro", new ModelInfo("Gemini 2.5 Pro", "Advanced capabilities", false, false, false));
-        models.put("gemini-2.0-flash", new ModelInfo("Gemini 2.0 Flash", "Next generation flash", false, false, false));
-        models.put("gemini-2.0-flash-lite", new ModelInfo("Gemini 2.0 Flash Lite", "Lightweight next gen", false, false, false));
+        models.put("gemini-1.5-flash-latest", new ModelInfo("Gemini 1.5 Flash Latest", "Fast and efficient", false, false, false, false, false, false, false, false));
+        models.put("gemini-1.5-pro-latest", new ModelInfo("Gemini 1.5 Pro Latest", "Most capable model", false, false, false, false, false, false, false, false));
         
         return models;
     }
@@ -311,14 +311,24 @@ public class QwenApiClient {
     public static class ModelInfo {
         public final String displayName;
         public final String description;
+        public final boolean supportsDocument;
+        public final boolean supportsVision;
+        public final boolean supportsVideo;
+        public final boolean supportsAudio;
+        public final boolean supportsCitations;
         public final boolean supportsThinking;
         public final boolean supportsWebSearch;
         public final boolean isQwenModel;
 
-        public ModelInfo(String displayName, String description, boolean supportsThinking, 
-                        boolean supportsWebSearch, boolean isQwenModel) {
+
+        public ModelInfo(String displayName, String description, boolean supportsDocument, boolean supportsVision, boolean supportsVideo, boolean supportsAudio, boolean supportsCitations, boolean supportsThinking, boolean supportsWebSearch, boolean isQwenModel) {
             this.displayName = displayName;
             this.description = description;
+            this.supportsDocument = supportsDocument;
+            this.supportsVision = supportsVision;
+            this.supportsVideo = supportsVideo;
+            this.supportsAudio = supportsAudio;
+            this.supportsCitations = supportsCitations;
             this.supportsThinking = supportsThinking;
             this.supportsWebSearch = supportsWebSearch;
             this.isQwenModel = isQwenModel;

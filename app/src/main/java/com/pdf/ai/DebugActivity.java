@@ -31,5 +31,14 @@ public class DebugActivity extends AppCompatActivity {
             clipboard.setPrimaryClip(clip);
             Toast.makeText(this, "Logs copied to clipboard", Toast.LENGTH_SHORT).show();
         });
+
+        Button restartButton = findViewById(R.id.restart_button);
+        restartButton.setOnClickListener(v -> {
+            Intent i = getBaseContext().getPackageManager()
+                    .getLaunchIntentForPackage(getBaseContext().getPackageName());
+            i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            startActivity(i);
+            finish();
+        });
     }
 }

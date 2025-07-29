@@ -125,8 +125,8 @@
             <!-- Send button -->
             <ImageButton
                 android:id="@+id/send_button"
-                android:layout_width="60dp"
-                android:layout_height="60dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:src="@drawable/ic_arrow_upward_24"
                 android:background="@drawable/send_button_background"
                 android:tint="?attr/colorOnPrimary"
