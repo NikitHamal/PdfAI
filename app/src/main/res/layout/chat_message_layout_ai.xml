@@ -1,19 +1,159 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:gravity="start"
     android:paddingBottom="8dp">
 
+    <!-- Thinking content (expandable) -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/thinking_card"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone"
+        app:cardBackgroundColor="@color/md_theme_light_surfaceVariant"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="0dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <LinearLayout
+                android:id="@+id/thinking_header"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_psychology_24"
+                    android:tint="?attr/colorPrimary"
+                    android:layout_marginEnd="8dp" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Thinking process"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorPrimary"
+                    android:fontFamily="@font/reg"
+                    android:textStyle="bold" />
+
+                <ImageView
+                                    android:id="@+id/thinking_expand_icon"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_expand_more_24"
+                android:tint="@color/md_theme_light_onSurfaceVariant" />
+
+            </LinearLayout>
+
+                    <TextView
+            android:id="@+id/thinking_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textSize="11sp"
+            android:textColor="@color/md_theme_light_onSurfaceVariant"
+            android:fontFamily="@font/reg"
+                android:lineSpacingExtra="2dp"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Web search content (expandable) -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/web_search_card"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone"
+        app:cardBackgroundColor="@color/md_theme_light_secondaryContainer"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="0dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <LinearLayout
+                android:id="@+id/web_search_header"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_search_24"
+                    android:tint="?attr/colorSecondary"
+                    android:layout_marginEnd="8dp" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Web search results"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorSecondary"
+                    android:fontFamily="@font/reg"
+                    android:textStyle="bold" />
+
+                            <ImageView
+                android:id="@+id/web_search_expand_icon"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_expand_more_24"
+                android:tint="@color/md_theme_light_onSurfaceVariant" />
+
+            </LinearLayout>
+
+                    <TextView
+            android:id="@+id/web_search_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textSize="11sp"
+            android:textColor="@color/md_theme_light_onSurfaceVariant"
+            android:fontFamily="@font/reg"
+                android:lineSpacingExtra="2dp"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Main AI response -->
     <TextView
         android:id="@+id/ai_message_text_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@drawable/ai_message_background"
-        android:padding="12dp"
-        android:textColor="@color/md_theme_light_onSecondaryContainer"
-        android:textSize="14sp"
-        android:maxWidth="300dp" />
+        android:padding="16dp"
+        android:textColor="@color/md_theme_light_onSurfaceVariant"
+        android:textSize="13sp"
+        android:fontFamily="@font/reg"
+        android:lineSpacingExtra="2dp"
+        android:maxWidth="280dp" />
 
 </LinearLayout>

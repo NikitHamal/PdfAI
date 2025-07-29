@@ -138,14 +138,58 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     static class AiMessageViewHolder extends RecyclerView.ViewHolder {
         TextView messageTextView;
+        MaterialCardView thinkingCard;
+        MaterialCardView webSearchCard;
+        TextView thinkingContent;
+        TextView webSearchContent;
+        LinearLayout thinkingHeader;
+        LinearLayout webSearchHeader;
+        ImageView thinkingExpandIcon;
+        ImageView webSearchExpandIcon;
 
         public AiMessageViewHolder(@NonNull View itemView) {
             super(itemView);
             messageTextView = itemView.findViewById(R.id.ai_message_text_view);
+            thinkingCard = itemView.findViewById(R.id.thinking_card);
+            webSearchCard = itemView.findViewById(R.id.web_search_card);
+            thinkingContent = itemView.findViewById(R.id.thinking_content);
+            webSearchContent = itemView.findViewById(R.id.web_search_content);
+            thinkingHeader = itemView.findViewById(R.id.thinking_header);
+            webSearchHeader = itemView.findViewById(R.id.web_search_header);
+            thinkingExpandIcon = itemView.findViewById(R.id.thinking_expand_icon);
+            webSearchExpandIcon = itemView.findViewById(R.id.web_search_expand_icon);
         }
 
         void bind(ChatMessage message) {
             messageTextView.setText(message.getMessage());
+
+            // Handle thinking content
+            if (message.hasThinking()) {
+                thinkingCard.setVisibility(View.VISIBLE);
+                thinkingContent.setText(message.getThinkingContent());
+                
+                thinkingHeader.setOnClickListener(v -> {
+                    boolean isExpanded = thinkingContent.getVisibility() == View.VISIBLE;
+                    thinkingContent.setVisibility(isExpanded ? View.GONE : View.VISIBLE);
+                    thinkingExpandIcon.setRotation(isExpanded ? 0f : 180f);
+                });
+            } else {
+                thinkingCard.setVisibility(View.GONE);
+            }
+
+            // Handle web search content
+            if (message.hasWebSearch()) {
+                webSearchCard.setVisibility(View.VISIBLE);
+                webSearchContent.setText(message.getWebSearchContent());
+                
+                webSearchHeader.setOnClickListener(v -> {
+                    boolean isExpanded = webSearchContent.getVisibility() == View.VISIBLE;
+                    webSearchContent.setVisibility(isExpanded ? View.GONE : View.VISIBLE);
+                    webSearchExpandIcon.setRotation(isExpanded ? 0f : 180f);
+                });
+            } else {
+                webSearchCard.setVisibility(View.GONE);
+            }
         }
     }
 

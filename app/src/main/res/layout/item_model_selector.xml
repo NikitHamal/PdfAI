@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="16dp"
+    android:background="?attr/selectableItemBackground"
+    android:gravity="center_vertical">
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tv_model_display_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Qwen3-235B-A22B-2507"
+            android:textSize="16sp"
+            android:textColor="?attr/colorOnSurface"
+            android:fontFamily="@font/reg"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/tv_model_description"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="The most powerful mixture-of-experts language model"
+            android:textSize="12sp"
+                            android:textColor="@color/md_theme_light_onSurfaceVariant"
+            android:fontFamily="@font/reg"
+            android:layout_marginTop="2dp"
+            android:maxLines="2"
+            android:ellipsize="end" />
+
+        <LinearLayout
+            android:id="@+id/ll_features"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp">
+
+            <TextView
+                android:id="@+id/tv_thinking_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Thinking"
+                android:textSize="10sp"
+                android:textColor="?attr/colorOnPrimary"
+                android:background="@drawable/feature_badge_background"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="2dp"
+                android:layout_marginEnd="4dp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tv_websearch_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Web Search"
+                android:textSize="10sp"
+                android:textColor="?attr/colorOnSecondary"
+                android:background="@drawable/feature_badge_background_secondary"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="2dp"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/iv_selected_indicator"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@drawable/ic_check_24"
+        android:tint="?attr/colorPrimary"
+        android:visibility="gone"
+        android:layout_marginStart="8dp" />
+
+</LinearLayout>

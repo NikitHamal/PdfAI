@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/model_selector_background"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:padding="12dp"
+    android:clickable="true"
+    android:focusable="true">
+
+    <TextView
+        android:id="@+id/tv_model_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Qwen3-235B"
+        android:textSize="12sp"
+        android:textColor="?attr/colorOnSurface"
+        android:fontFamily="@font/reg"
+        android:maxLines="1"
+        android:ellipsize="end" />
+
+    <ImageView
+        android:id="@+id/iv_dropdown_arrow"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:layout_marginStart="8dp"
+        android:src="@drawable/ic_arrow_drop_down_24"
+        android:tint="?attr/colorOnSurface"
+        android:contentDescription="Model selector dropdown" />
+
+</LinearLayout>
