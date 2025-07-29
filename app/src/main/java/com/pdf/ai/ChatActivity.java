@@ -574,7 +574,31 @@ public class ChatActivity extends AppCompatActivity implements
     // Placeholder methods for interface implementation
     @Override
     public void onApproveOutline(OutlineData outlineData) {
-        // Implementation for PDF generation...
+        if (isGeneratingPdf) return;
+        isGeneratingPdf = true;
+        String pdfTitle = outlineData.getPdfTitle();
+        List<String> sectionsContent = new ArrayList<>();
+        // Fill sectionsContent with empty strings for each section (or fetch real content if available)
+        for (int i = 0; i < outlineData.getSections().size(); i++) {
+            sectionsContent.add("");
+        }
+        pdfGenerator.createPdf(pdfTitle, outlineData, sectionsContent, new PdfGenerator.PdfGenerationCallback() {
+            @Override
+            public void onPdfGenerated(String filePath, String pdfTitle) {
+                isGeneratingPdf = false;
+                runOnUiThread(() -> {
+                    Toast.makeText(ChatActivity.this, "PDF generated: " + filePath, Toast.LENGTH_LONG).show();
+                    // Optionally, show a dialog or open the PDF
+                });
+            }
+            @Override
+            public void onPdfGenerationFailed(String error) {
+                isGeneratingPdf = false;
+                runOnUiThread(() -> {
+                    Toast.makeText(ChatActivity.this, "PDF generation failed: " + error, Toast.LENGTH_LONG).show();
+                });
+            }
+        });
     }
 
     @Override

@@ -8,238 +8,86 @@
     android:paddingBottom="8dp"
     android:gravity="start">
 
-    <!-- Enhanced Header with AI Assistant indicator -->
-    <LinearLayout
-        android:layout_width="match_parent"
+    <TextView
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
+        android:text="Here's an outline for your PDF. You can edit, add, or delete sections and titles."
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="@color/md_theme_light_onSurface"
         android:background="@drawable/ai_message_background"
-        android:padding="16dp"
-        android:layout_marginBottom="12dp">
+        android:padding="12dp"
+        android:layout_marginBottom="8dp" />
 
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/icon_auto_awesome"
-            android:tint="@color/md_theme_light_primary"
-            android:layout_marginEnd="12dp" />
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Interactive Document Outline"
-                android:textAppearance="?attr/textAppearanceTitleSmall"
-                android:textColor="@color/md_theme_light_onSurface"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Edit sections, reorder, and customize your document structure"
-                android:textAppearance="?attr/textAppearanceBodySmall"
-                android:textColor="@color/md_theme_light_onSurfaceVariant"
-                android:layout_marginTop="2dp" />
-
-        </LinearLayout>
-
-        <!-- Expand/Collapse toggle -->
-        <ImageButton
-            android:id="@+id/outline_expand_toggle"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:src="@drawable/icon_expand_more"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:tint="@color/md_theme_light_onSurface"
-            android:contentDescription="Expand/Collapse outline" />
-
-    </LinearLayout>
-
-    <!-- Main Outline Card -->
     <com.google.android.material.card.MaterialCardView
-        android:id="@+id/outline_main_card"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:cardCornerRadius="20dp"
+        app:cardCornerRadius="16dp"
         app:cardBackgroundColor="@color/md_theme_light_surfaceContainerHigh"
-        app:cardElevation="2dp"
-        app:strokeWidth="1dp"
-        app:strokeColor="@color/md_theme_light_outlineVariant"
-        android:layout_marginBottom="16dp">
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="20dp">
+            android:padding="16dp">
 
-            <!-- Document Title Section -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/rounded_container_background"
-                android:padding="16dp"
-                android:layout_marginBottom="20dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Document Title"
-                    android:textAppearance="?attr/textAppearanceLabelMedium"
-                    android:textColor="@color/md_theme_light_primary"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="8dp" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-
-                    <EditText
-                        android:id="@+id/pdf_title_edit_text"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:hint="Enter your document title..."
-                        android:textAppearance="?attr/textAppearanceTitleMedium"
-                        android:textColor="@color/md_theme_light_onSurface"
-                        android:textColorHint="@color/md_theme_light_onSurfaceVariant"
-                        android:background="@drawable/enhanced_edittext_background"
-                        android:padding="16dp"
-                        android:minHeight="56dp"
-                        android:gravity="center_vertical"
-                        android:singleLine="true"
-                        android:layout_marginEnd="8dp" />
-
-                    <ImageButton
-                        android:id="@+id/title_ai_enhance"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:src="@drawable/icon_auto_fix_high"
-                        android:background="@drawable/circular_button_background"
-                        android:backgroundTint="@color/md_theme_light_primaryContainer"
-                        android:tint="@color/md_theme_light_onPrimaryContainer"
-                        android:contentDescription="AI enhance title"
-                        android:tooltipText="AI enhance title" />
-
-                </LinearLayout>
-
-            </LinearLayout>
-
-            <!-- Sections Header -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="8dp">
 
-                <TextView
+                <EditText
+                    android:id="@+id/pdf_title_edit_text"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Document Sections"
+                    android:hint="Project Proposal"
                     android:textAppearance="?attr/textAppearanceTitleSmall"
                     android:textColor="@color/md_theme_light_onSurface"
-                    android:textStyle="bold" />
+                    android:textColorHint="@color/md_theme_light_onSurfaceVariant"
+                    android:background="@drawable/rounded_edittext_outline_background"
+                    android:padding="12dp"
+                    android:singleLine="true" />
 
-                <TextView
-                    android:id="@+id/sections_count"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="0 sections"
-                    android:textAppearance="?attr/textAppearanceBodySmall"
-                    android:background="@drawable/pill_background"
-                    android:backgroundTint="@color/md_theme_light_secondaryContainer"
-                    android:textColor="@color/md_theme_light_onSecondaryContainer"
-                    android:paddingHorizontal="12dp"
-                    android:paddingVertical="4dp" />
-
+                <ImageView
+                    android:id="@+id/add_title_section"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/icon_add_circle_round"
+                    android:tint="@color/md_theme_light_primary"
+                    android:contentDescription="Add section"
+                    android:layout_marginStart="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackgroundBorderless" />
             </LinearLayout>
 
-            <!-- Sections Container -->
             <LinearLayout
                 android:id="@+id/outline_sections_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginBottom="20dp">
-            </LinearLayout>
+                android:orientation="vertical">
+                </LinearLayout>
 
-            <!-- Enhanced Add Section Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/add_section_button"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:text="Add New Section"
-                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Add Section"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="16dp"
+                style="@style/Widget.Material3.Button.TextButton"
                 app:icon="@drawable/icon_add_round"
                 app:iconTint="@color/md_theme_light_primary"
-                app:strokeColor="@color/md_theme_light_primary"
-                app:strokeWidth="2dp"
-                android:textColor="@color/md_theme_light_primary"
-                app:cornerRadius="16dp"
-                android:layout_marginBottom="8dp" />
-
-            <!-- Quick Actions Row -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:layout_marginTop="12dp">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/ai_improve_outline"
-                    android:layout_width="0dp"
-                    android:layout_height="40dp"
-                    android:layout_weight="1"
-                    android:text="AI Improve"
-                    style="@style/Widget.Material3.Button.TextButton"
-                    app:icon="@drawable/icon_auto_awesome"
-                    app:iconSize="16dp"
-                    android:textSize="12sp"
-                    android:layout_marginEnd="4dp" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/reorder_sections"
-                    android:layout_width="0dp"
-                    android:layout_height="40dp"
-                    android:layout_weight="1"
-                    android:text="Reorder"
-                    style="@style/Widget.Material3.Button.TextButton"
-                    app:icon="@drawable/icon_swap_vert"
-                    app:iconSize="16dp"
-                    android:textSize="12sp"
-                    android:layout_marginHorizontal="4dp" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/preview_outline"
-                    android:layout_width="0dp"
-                    android:layout_height="40dp"
-                    android:layout_weight="1"
-                    android:text="Preview"
-                    style="@style/Widget.Material3.Button.TextButton"
-                    app:icon="@drawable/icon_preview"
-                    app:iconSize="16dp"
-                    android:textSize="12sp"
-                    android:layout_marginStart="4dp" />
-
-            </LinearLayout>
+                android:textColor="@color/md_theme_light_primary" />
 
         </LinearLayout>
 
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- Enhanced Action Buttons -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -248,36 +96,23 @@
         android:layout_marginTop="8dp">
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/save_draft_button"
-            android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:text="Save Draft"
-            style="@style/Widget.Material3.Button.TextButton"
-            app:icon="@drawable/icon_save"
-            android:textColor="@color/md_theme_light_onSurfaceVariant"
-            android:layout_marginEnd="8dp" />
-
-        <com.google.android.material.button.MaterialButton
             android:id="@+id/discard_button"
             android:layout_width="wrap_content"
-            android:layout_height="48dp"
+            android:layout_height="wrap_content"
             android:text="Discard"
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:textColor="@color/md_theme_light_error"
             app:strokeColor="@color/md_theme_light_error"
-            app:cornerRadius="24dp"
-            android:layout_marginEnd="12dp" />
+            android:layout_marginEnd="8dp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/approve_button"
             android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:text="Generate PDF"
-            style="@style/Widget.Material3.Button.FilledButton"
-            app:icon="@drawable/icon_picture_as_pdf"
+            android:layout_height="wrap_content"
+            android:text="Approve"
+            style="@style/Widget.Material3.Button.OutlinedButton"
             android:textColor="@color/md_theme_light_onPrimary"
-            android:backgroundTint="@color/md_theme_light_primary"
-            app:cornerRadius="24dp" />
+            android:backgroundTint="@color/md_theme_light_primary" />
 
     </LinearLayout>
 
