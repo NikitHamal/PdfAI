@@ -212,53 +212,75 @@ public class ChatActivity extends AppCompatActivity implements
         // Save message to conversation
         saveConversationMessage(userMessage);
 
-        // Show progress message
-        showProgressMessage("Thinking...", 0);
+        // Create streaming AI message
+        ChatMessage aiMessage = new ChatMessage(ChatMessage.TYPE_AI, "", null);
+        aiMessage.setStreaming(true);
+        chatMessages.add(aiMessage);
+        messageAdapter.notifyItemInserted(chatMessages.size() - 1);
+        chatRecyclerView.scrollToPosition(chatMessages.size() - 1);
 
         // Send to AI
-        handleQwenMessage(message);
+        handleQwenMessage(message, aiMessage);
     }
 
-    private void handleQwenMessage(String message) {
+    private void handleQwenMessage(String message, ChatMessage aiMessage) {
         if (currentChatId == null) {
             // Start new Qwen conversation
             qwenApiClient.createNewChat("New Chat", new String[]{selectedModel}, new QwenApiClient.NewChatCallback() {
                 @Override
                 public void onSuccess(String chatId) {
                     currentChatId = chatId;
-                    sendQwenCompletion(message);
+                    sendQwenCompletion(message, aiMessage);
                 }
 
                 @Override
                 public void onFailure(String error) {
-                    removeProgressMessage();
+                    // Remove the streaming message on error
+                    if (chatMessages.contains(aiMessage)) {
+                        chatMessages.remove(aiMessage);
+                        messageAdapter.notifyItemRemoved(chatMessages.size());
+                    }
                     showError("Failed to start conversation: " + error);
                 }
             });
         } else {
             // Continue existing conversation
-            sendQwenCompletion(message);
+            sendQwenCompletion(message, aiMessage);
         }
     }
 
-    private void sendQwenCompletion(String message) {
+    private void sendQwenCompletion(String message, ChatMessage aiMessage) {
         qwenApiClient.sendCompletion(currentChatId, selectedModel, message, currentParentId, 
                 thinkingEnabled, webSearchEnabled, new QwenApiClient.QwenApiCallback() {
                     @Override
                     public void onSuccess(String response) {
-                        removeProgressMessage();
-                        addAiMessage(response);
+                        // Finalize the streaming message
+                        aiMessage.setStreaming(false);
+                        aiMessage.setMessage(response);
+                        messageAdapter.notifyItemChanged(chatMessages.indexOf(aiMessage));
+                        
+                        // Save message to conversation
+                        saveConversationMessage(aiMessage);
                     }
 
                     @Override
                     public void onFailure(String error) {
-                        removeProgressMessage();
+                        // Remove the streaming message on error
+                        if (chatMessages.contains(aiMessage)) {
+                            chatMessages.remove(aiMessage);
+                            messageAdapter.notifyItemRemoved(chatMessages.size());
+                        }
                         showError("Failed to get response: " + error);
                     }
 
                     @Override
                     public void onStreamUpdate(String type, String content) {
-                        updateProgressMessage("Processing...", 50);
+                        // Update streaming content
+                        if (chatMessages.contains(aiMessage)) {
+                            aiMessage.appendStreamedContent(content);
+                            messageAdapter.notifyItemChanged(chatMessages.indexOf(aiMessage));
+                            chatRecyclerView.scrollToPosition(chatMessages.size() - 1);
+                        }
                     }
                 });
     }
@@ -294,29 +316,6 @@ public class ChatActivity extends AppCompatActivity implements
             messageAdapter.notifyItemInserted(chatMessages.size() - 1);
             chatRecyclerView.scrollToPosition(chatMessages.size() - 1);
             saveConversationMessage(aiMessage);
-        }
-    }
-
-    private void showProgressMessage(String status, int progressValue) {
-        ChatMessage progressMessage = new ChatMessage(ChatMessage.TYPE_PROGRESS, null, status, progressValue);
-        chatMessages.add(progressMessage);
-        messageAdapter.notifyItemInserted(chatMessages.size() - 1);
-        chatRecyclerView.scrollToPosition(chatMessages.size() - 1);
-    }
-
-    private void updateProgressMessage(String status, int progressValue) {
-        if (!chatMessages.isEmpty() && chatMessages.get(chatMessages.size() - 1).getType() == ChatMessage.TYPE_PROGRESS) {
-            ChatMessage progressMessage = chatMessages.get(chatMessages.size() - 1);
-            progressMessage.setProgressStatus(status);
-            progressMessage.setProgressValue(progressValue);
-            messageAdapter.notifyItemChanged(chatMessages.size() - 1);
-        }
-    }
-
-    private void removeProgressMessage() {
-        if (!chatMessages.isEmpty() && chatMessages.get(chatMessages.size() - 1).getType() == ChatMessage.TYPE_PROGRESS) {
-            chatMessages.remove(chatMessages.size() - 1);
-            messageAdapter.notifyItemRemoved(chatMessages.size());
         }
     }
 

@@ -46,7 +46,7 @@
                 android:contentDescription="Description icon" />
 
             <TextView
-                android:id="@+id/suggestion_text"
+                android:id="@+id/suggestion_text_1"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -81,7 +81,7 @@
                 android:contentDescription="Description icon" />
 
             <TextView
-                android:id="@+id/suggestion_text"
+                android:id="@+id/suggestion_text_2"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -116,7 +116,7 @@
                 android:contentDescription="Description icon" />
 
             <TextView
-                android:id="@+id/suggestion_text"
+                android:id="@+id/suggestion_text_3"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -151,7 +151,7 @@
                 android:contentDescription="Description icon" />
 
             <TextView
-                android:id="@+id/suggestion_text"
+                android:id="@+id/suggestion_text_4"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
