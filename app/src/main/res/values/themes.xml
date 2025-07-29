@@ -14,6 +14,8 @@
         <!-- Customize your theme here. -->
         <item name="android:fontFamily">@font/reg</item>
         <item name="android:includeFontPadding">false</item>
+        <item name="colorInverseOnSurface">@color/md_theme_light_inverseOnSurface</item>
+        <item name="colorInverseSurface">@color/md_theme_light_inverseSurface</item>
     </style>
 
     <style name="AppTheme.DebugActivity" parent="Theme.AppCompat.Light.NoActionBar">
