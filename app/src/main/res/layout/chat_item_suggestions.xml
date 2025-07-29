@@ -18,13 +18,13 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="I can help you create PDFs on any topic. Here are some suggestions:"
+        android:text="I can help you with any questions. Here are some suggestions:"
         android:textAppearance="?attr/textAppearanceBodyMedium"
         android:textColor="@color/md_theme_light_onBackground"
         android:layout_marginBottom="16dp" />
 
     <com.google.android.material.card.MaterialCardView
-        android:id="@+id/suggestion1"
+        android:id="@+id/suggestion_1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
@@ -46,11 +46,12 @@
                 android:contentDescription="Description icon" />
 
             <TextView
+                android:id="@+id/suggestion_text"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginStart="16dp"
-                android:text="Create a PDF about the hist..."
+                android:text="Tell me about artificial intelligence"
                 android:textAppearance="?attr/textAppearanceBodyMedium"
                 android:textColor="@color/md_theme_light_onSurfaceVariant" />
 
@@ -58,7 +59,7 @@
     </com.google.android.material.card.MaterialCardView>
 
     <com.google.android.material.card.MaterialCardView
-        android:id="@+id/suggestion2"
+        android:id="@+id/suggestion_2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
@@ -80,11 +81,12 @@
                 android:contentDescription="Description icon" />
 
             <TextView
+                android:id="@+id/suggestion_text"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginStart="16dp"
-                android:text="Generate a PDF on the ben..."
+                android:text="Explain quantum computing"
                 android:textAppearance="?attr/textAppearanceBodyMedium"
                 android:textColor="@color/md_theme_light_onSurfaceVariant" />
 
@@ -92,7 +94,7 @@
     </com.google.android.material.card.MaterialCardView>
 
     <com.google.android.material.card.MaterialCardView
-        android:id="@+id/suggestion3"
+        android:id="@+id/suggestion_3"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
@@ -114,11 +116,12 @@
                 android:contentDescription="Description icon" />
 
             <TextView
+                android:id="@+id/suggestion_text"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginStart="16dp"
-                android:text="Make a PDF about the imp..."
+                android:text="Write a story about space exploration"
                 android:textAppearance="?attr/textAppearanceBodyMedium"
                 android:textColor="@color/md_theme_light_onSurfaceVariant" />
 
@@ -126,9 +129,10 @@
     </com.google.android.material.card.MaterialCardView>
 
     <com.google.android.material.card.MaterialCardView
-        android:id="@+id/suggestion4"
+        android:id="@+id/suggestion_4"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
         app:cardCornerRadius="16dp"
         app:cardBackgroundColor="@color/md_theme_light_surfaceContainer">
 
@@ -147,11 +151,12 @@
                 android:contentDescription="Description icon" />
 
             <TextView
+                android:id="@+id/suggestion_text"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginStart="16dp"
-                android:text="Create a PDF on the art of s..."
+                android:text="Help me with my homework"
                 android:textAppearance="?attr/textAppearanceBodyMedium"
                 android:textColor="@color/md_theme_light_onSurfaceVariant" />
 
