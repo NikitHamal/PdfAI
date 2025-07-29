@@ -576,28 +576,69 @@ public class ChatActivity extends AppCompatActivity implements
     public void onApproveOutline(OutlineData outlineData) {
         if (isGeneratingPdf) return;
         isGeneratingPdf = true;
-        String pdfTitle = outlineData.getPdfTitle();
-        List<String> sectionsContent = new ArrayList<>();
-        // Fill sectionsContent with empty strings for each section (or fetch real content if available)
-        for (int i = 0; i < outlineData.getSections().size(); i++) {
-            sectionsContent.add("");
-        }
-        pdfGenerator.createPdf(pdfTitle, outlineData, sectionsContent, new PdfGenerator.PdfGenerationCallback() {
-            @Override
-            public void onPdfGenerated(String filePath, String pdfTitle) {
-                isGeneratingPdf = false;
+        generatePdfSections(outlineData);
+    }
+
+    private void generatePdfSections(OutlineData outlineData) {
+        showProgressMessage("Generating PDF content...", 0);
+        currentPdfSectionsContent = new ArrayList<>();
+        List<String> sections = outlineData.getSections();
+
+        // Use ExecutorService for background processing
+        executorService.submit(() -> {
+            for (int i = 0; i < sections.size(); i++) {
+                String sectionTitle = sections.get(i);
+                int progress = (int) (((i + 1.0) / sections.size()) * 100);
+
                 runOnUiThread(() -> {
-                    Toast.makeText(ChatActivity.this, "PDF generated: " + filePath, Toast.LENGTH_LONG).show();
-                    // Optionally, show a dialog or open the PDF
+                    updateProgressMessage("Generating section: " + sectionTitle, progress);
                 });
+
+                String prompt = instructionManager.getSectionGenerationInstructions(outlineData.getPdfTitle(), sectionTitle);
+
+                // Synchronous call within the background thread
+                qwenApiClient.sendCompletion(currentChatId, selectedModel, prompt, currentParentId,
+                    thinkingEnabled, webSearchEnabled, new QwenApiClient.QwenApiCallback() {
+                        @Override
+                        public void onSuccess(String response) {
+                            try {
+                                JSONObject responseObj = new JSONObject(response);
+                                String answer = responseObj.optString("answer", "Content generation failed for this section.");
+                                currentPdfSectionsContent.add(answer);
+                            } catch (JSONException e) {
+                                currentPdfSectionsContent.add("Error parsing section content.");
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(String error) {
+                            currentPdfSectionsContent.add("Failed to generate content: " + error);
+                        }
+
+                        @Override
+                        public void onStreamUpdate(String type, String content) {
+                            // Not used in synchronous-style call
+                        }
+                    });
             }
-            @Override
-            public void onPdfGenerationFailed(String error) {
-                isGeneratingPdf = false;
-                runOnUiThread(() -> {
-                    Toast.makeText(ChatActivity.this, "PDF generation failed: " + error, Toast.LENGTH_LONG).show();
+
+            // After all sections are generated, create the PDF
+            runOnUiThread(() -> {
+                removeProgressMessage();
+                pdfGenerator.createPdf(outlineData.getPdfTitle(), outlineData, currentPdfSectionsContent, new PdfGenerator.PdfGenerationCallback() {
+                    @Override
+                    public void onPdfGenerated(String filePath, String pdfTitle) {
+                        isGeneratingPdf = false;
+                        Toast.makeText(ChatActivity.this, "PDF generated: " + filePath, Toast.LENGTH_LONG).show();
+                    }
+
+                    @Override
+                    public void onPdfGenerationFailed(String error) {
+                        isGeneratingPdf = false;
+                        Toast.makeText(ChatActivity.this, "PDF generation failed: " + error, Toast.LENGTH_LONG).show();
+                    }
                 });
-            }
+            });
         });
     }
 
