@@ -2,64 +2,138 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/app_bar_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:elevation="0dp">
+        app:elevation="0dp"
+        android:background="?attr/colorSurface">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:title="Chat"
-            app:navigationIcon="@drawable/ic_arrow_back_24" />
+            app:titleTextColor="?attr/colorOnSurface"
+            app:navigationIcon="@drawable/ic_arrow_back_24"
+            app:navigationIconTint="?attr/colorOnSurface">
+
+            <!-- Model selector in the right side of toolbar -->
+            <FrameLayout
+                android:id="@+id/fl_model_selector_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginEnd="16dp" />
+
+        </com.google.android.material.appbar.MaterialToolbar>
 
     </com.google.android.material.appbar.AppBarLayout>
 
+    <!-- Chat messages recycler view -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/chat_recycler_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/app_bar_layout"
-        android:layout_above="@+id/input_layout"
-        android:padding="16dp"
-        android:clipToPadding="false"/>
+        android:layout_above="@+id/input_container"
+        android:padding="8dp"
+        android:clipToPadding="false"
+        android:scrollbars="vertical" />
 
+    <!-- Empty state container -->
     <LinearLayout
-        android:id="@+id/input_layout"
+        android:id="@+id/empty_state_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="32dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Start a conversation"
+            android:textSize="20sp"
+            android:textColor="?attr/colorOnSurface"
+            android:fontFamily="@font/reg"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ask me anything and I'll help you out"
+            android:textSize="14sp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:fontFamily="@font/reg"
+            android:gravity="center" />
+
+    </LinearLayout>
+
+    <!-- Input area with modern design -->
+    <LinearLayout
+        android:id="@+id/input_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:orientation="horizontal"
-        android:padding="8dp">
+        android:orientation="vertical"
+        android:background="?attr/colorSurface"
+        android:elevation="8dp"
+        android:padding="16dp">
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="0dp"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
-            <com.google.android.material.textfield.TextInputEditText
+            <!-- Tune button -->
+            <ImageButton
+                android:id="@+id/btn_tune"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@drawable/ic_tune_24"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:tint="?attr/colorOnSurfaceVariant"
+                android:layout_marginEnd="8dp"
+                android:contentDescription="Tune settings" />
+
+            <!-- Message input -->
+            <EditText
                 android:id="@+id/message_edit_text"
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/chat_input_background"
                 android:hint="Ask me anything..."
+                android:textSize="14sp"
+                android:textColor="?attr/colorOnSurface"
+                android:textColorHint="?attr/colorOnSurfaceVariant"
+                android:fontFamily="@font/reg"
                 android:inputType="textCapSentences|textMultiLine"
-                android:maxLines="5" />
+                android:maxLines="4"
+                android:minHeight="48dp"
+                android:padding="16dp"
+                android:layout_marginEnd="8dp" />
 
-        </com.google.android.material.textfield.TextInputLayout>
+            <!-- Send button -->
+            <ImageButton
+                android:id="@+id/send_button"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:src="@drawable/ic_arrow_upward_24"
+                android:background="@drawable/send_button_background"
+                android:tint="?attr/colorOnPrimary"
+                android:contentDescription="Send message"
+                android:enabled="false" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/send_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_gravity="center_vertical"
-            app:icon="@drawable/ic_send_24"
-            style="@style/Widget.Material3.Button.IconButton" />
+        </LinearLayout>
 
     </LinearLayout>
 

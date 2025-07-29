@@ -6,8 +6,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ArrayAdapter;
-import android.widget.AutoCompleteTextView;
+import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -15,16 +14,16 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
-import com.google.android.material.textfield.TextInputLayout;
 import androidx.appcompat.app.AppCompatDelegate;
 import com.google.android.material.materialswitch.MaterialSwitch;
 
-public class SettingsActivity extends AppCompatActivity {
+public class SettingsActivity extends AppCompatActivity implements ModelSelectorComponent.OnModelSelectedListener {
 
     private PreferencesManager preferencesManager;
     private TextInputEditText apiKeyEditText;
-    private AutoCompleteTextView modelSpinnerAutocomplete;
     private MaterialSwitch themeSwitch;
+    private FrameLayout modelSelectorContainer;
+    private ModelSelectorComponent modelSelectorComponent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,25 +38,14 @@ public class SettingsActivity extends AppCompatActivity {
 
         apiKeyEditText = findViewById(R.id.api_key_edit_text);
         MaterialButton saveApiKeyButton = findViewById(R.id.save_api_key_button);
-        modelSpinnerAutocomplete = findViewById(R.id.model_spinner_autocomplete);
+        modelSelectorContainer = findViewById(R.id.fl_settings_model_selector_container);
         themeSwitch = findViewById(R.id.theme_switch);
 
-        // Load saved API key and model
+        // Load saved API key
         apiKeyEditText.setText(preferencesManager.getGeminiApiKey());
 
-        // Set up model spinner
-        String[] models = {
-            "gemini-1.5-flash-latest",
-            "gemini-1.5-pro-latest",
-            "gemini-2.5-flash-lite-preview-06-17",
-            "gemini-2.5-flash",
-            "gemini-2.5-pro",
-            "gemini-2.0-flash",
-            "gemini-2.0-flash-lite"
-        };
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, models);
-        modelSpinnerAutocomplete.setAdapter(adapter);
-        modelSpinnerAutocomplete.setText(preferencesManager.getSelectedModel(), false);
+        // Setup model selector
+        setupModelSelector();
 
         saveApiKeyButton.setOnClickListener(v -> {
             String apiKey = apiKeyEditText.getText().toString().trim();
@@ -67,12 +55,6 @@ public class SettingsActivity extends AppCompatActivity {
             } else {
                 Toast.makeText(this, "API Key cannot be empty", Toast.LENGTH_SHORT).show();
             }
-        });
-
-        modelSpinnerAutocomplete.setOnItemClickListener((parent, view, position, id) -> {
-            String selectedModel = (String) parent.getItemAtPosition(position);
-            preferencesManager.setSelectedModel(selectedModel);
-            Toast.makeText(this, "Default model saved!", Toast.LENGTH_SHORT).show();
         });
 
         int currentNightMode = getResources().getConfiguration().uiMode & android.content.res.Configuration.UI_MODE_NIGHT_MASK;
@@ -92,6 +74,25 @@ public class SettingsActivity extends AppCompatActivity {
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
             }
         });
+    }
+
+    private void setupModelSelector() {
+        modelSelectorComponent = new ModelSelectorComponent(this, this);
+        modelSelectorComponent.setSelectedModel(preferencesManager.getSelectedModel());
+        View selectorView = modelSelectorComponent.createSelectorView();
+        modelSelectorContainer.addView(selectorView);
+    }
+
+    @Override
+    public void onModelSelected(String modelId, QwenApiClient.ModelInfo modelInfo) {
+        preferencesManager.setSelectedModel(modelId);
+        Toast.makeText(this, "Default model updated to " + modelInfo.displayName, Toast.LENGTH_SHORT).show();
+        
+        // Update the selector view
+        View selectorView = modelSelectorContainer.getChildAt(0);
+        if (selectorView != null) {
+            modelSelectorComponent.updateSelectorView(selectorView, modelId);
+        }
     }
 
     @Override

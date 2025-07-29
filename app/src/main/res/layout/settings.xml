@@ -76,20 +76,20 @@
                 android:textColor="?attr/colorPrimary"
                 android:layout_marginBottom="8dp"/>
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/model_spinner_layout"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Select a default model">
+                android:text="Choose the default AI model for new conversations"
+                android:textSize="14sp"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:fontFamily="@font/reg"
+                android:layout_marginBottom="16dp" />
 
-                <AutoCompleteTextView
-                    android:id="@+id/model_spinner_autocomplete"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="none" />
-
-            </com.google.android.material.textfield.TextInputLayout>
+            <FrameLayout
+                android:id="@+id/fl_settings_model_selector_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start" />
 
             <View
                 android:layout_width="match_parent"
