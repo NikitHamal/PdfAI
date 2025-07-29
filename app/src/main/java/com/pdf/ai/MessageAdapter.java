@@ -132,7 +132,7 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         }
 
         void bind(ChatMessage message) {
-            messageTextView.setText(message.getMessage());
+            messageTextView.setText(message.getMessage() != null ? message.getMessage() : "");
         }
     }
 
@@ -145,7 +145,7 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         }
 
         void bind(ChatMessage message) {
-            messageTextView.setText(message.getMessage());
+            messageTextView.setText(message.getMessage() != null ? message.getMessage() : "");
         }
     }
 
@@ -160,7 +160,7 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         }
 
         void bind(ChatMessage message) {
-            statusTextView.setText(message.getProgressStatus());
+            statusTextView.setText(message.getProgressStatus() != null ? message.getProgressStatus() : "");
             progressBar.setProgress(message.getProgressValue()); // Set the progress value
         }
     }

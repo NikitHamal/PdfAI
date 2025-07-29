@@ -93,6 +93,18 @@ public class ChatActivity extends AppCompatActivity implements
             addWelcomeMessage();
         }
 
+        sendButton.setEnabled(false);
+        messageEditText.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                sendButton.setEnabled(s != null && s.length() > 0);
+            }
+            @Override
+            public void afterTextChanged(android.text.Editable s) {}
+        });
+
         sendButton.setOnClickListener(v -> {
             String message = messageEditText.getText().toString().trim();
             if (!message.isEmpty()) {
@@ -131,32 +143,54 @@ public class ChatActivity extends AppCompatActivity implements
         BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(this);
         View bottomSheetView = getLayoutInflater().inflate(R.layout.model_picker_sheet, null);
         bottomSheetDialog.setContentView(bottomSheetView);
-
         LinearLayout modelList = bottomSheetView.findViewById(R.id.model_list);
-        String[] models = {
-                "gemini-1.5-flash-latest",
-                "gemini-1.5-pro-latest",
-                "gemini-2.5-flash-lite-preview-06-17",
-                "gemini-2.5-flash",
-                "gemini-2.5-pro",
-                "gemini-2.0-flash",
-                "gemini-2.0-flash-lite"
+        // Qwen models and capabilities (from qwen_thinking_search.txt)
+        String[][] models = new String[][]{
+            {"qwen3-coder-plus", "Qwen3-Coder", "Powerful coding-specialized model. Code, tool use, agentic tasks."},
+            {"qwen3-235b-a22b", "Qwen3-235B-A22B", "Flagship MoE model. Complex reasoning, math, coding, creative writing."},
+            {"qwen3-30b-a3b", "Qwen3-30B-A3B", "Compact, high-performance MoE. Summarization, translation, etc."},
+            {"qwen3-32b", "Qwen3-32B", "Largest dense model. Complex tasks, reasoning, math, coding."},
+            {"qwen-max-latest", "Qwen2.5-Max", "Most powerful Qwen. Complex reasoning, math, coding, creative writing."},
+            {"qwen-plus-2025-01-25", "Qwen2.5-Plus", "Flagship. Complex tasks, coding, math, language understanding."},
+            {"qwq-32b", "QwQ-32B", "Reasoning model. Chain-of-thought, coding, math, logic."},
+            {"qwen-turbo-2025-02-11", "Qwen2.5-Turbo", "Fast, 1M-token context. Summarization, translation, etc."},
+            {"qwen2.5-omni-7b", "Qwen2.5-Omni-7B", "Omni-model. Text, image, audio, video, real-time generation."},
+            {"qvq-72b-preview-0310", "QVQ-Max", "Largest visual reasoning model. Visual chain-of-thought."},
+            {"qwen2.5-vl-32b-instruct", "Qwen2.5-VL-32B-Instruct", "Vision-language model. Image/video understanding, captioning."},
+            {"qwen2.5-14b-instruct-1m", "Qwen2.5-14B-Instruct-1M", "Long-context open model. 1M tokens, summarization, etc."},
+            {"qwen2.5-coder-32b-instruct", "Qwen2.5-Coder-32B-Instruct", "Flagship coder model. Top-tier coding performance."},
+            {"qwen2.5-72b-instruct", "Qwen2.5-72B-Instruct", "Largest open Qwen2.5. Language, coding, math, multilingual."}
         };
-
-        for (String model : models) {
-            TextView textView = new TextView(this);
-            textView.setText(model);
-            textView.setTextSize(14);
-            textView.setPadding(40, 20, 40, 20);
-            textView.setOnClickListener(v -> {
-                selectedModel = model;
-                modelNameText.setText(selectedModel);
-                preferencesManager.setSelectedModel(selectedModel);
-                bottomSheetDialog.dismiss();
+        for (String[] model : models) {
+            android.widget.LinearLayout item = new android.widget.LinearLayout(this);
+            item.setOrientation(android.widget.LinearLayout.VERTICAL);
+            item.setPadding(24, 16, 24, 16);
+            item.setBackgroundResource(android.R.drawable.dialog_holo_light_frame);
+            android.widget.TextView name = new android.widget.TextView(this);
+            name.setText(model[1]);
+            name.setTextSize(16);
+            name.setTypeface(null, android.graphics.Typeface.BOLD);
+            android.widget.TextView desc = new android.widget.TextView(this);
+            desc.setText(model[2]);
+            desc.setTextSize(13);
+            desc.setTextColor(0xFF666666);
+            item.addView(name);
+            item.addView(desc);
+            item.setOnClickListener(v -> {
+                runOnUiThread(() -> {
+                    selectedModel = model[0];
+                    modelNameText.setText(model[1]);
+                    preferencesManager.setSelectedModel(selectedModel);
+                    bottomSheetDialog.dismiss();
+                });
             });
-            modelList.addView(textView);
+            android.widget.LinearLayout.LayoutParams params = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT);
+            params.setMargins(0, 0, 0, 12);
+            item.setLayoutParams(params);
+            modelList.addView(item);
         }
-
         bottomSheetDialog.show();
     }
 
