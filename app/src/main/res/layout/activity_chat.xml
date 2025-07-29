@@ -23,7 +23,7 @@
 
             <!-- Model selector in the right side of toolbar -->
             <FrameLayout
-                android:id="@+id/fl_model_selector_container"
+                android:id="@+id/model_selector_container"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="end"
@@ -95,7 +95,7 @@
 
             <!-- Tune button -->
             <ImageButton
-                android:id="@+id/btn_tune"
+                android:id="@+id/tune_button"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:src="@drawable/ic_tune_24"

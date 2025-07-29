@@ -128,6 +128,13 @@ public class ConversationManager {
     }
     
     /**
+     * Set current conversation ID
+     */
+    public void setCurrentConversationId(String conversationId) {
+        saveCurrentConversationId(conversationId);
+    }
+    
+    /**
      * Save current conversation ID
      */
     private void saveCurrentConversationId(String conversationId) {

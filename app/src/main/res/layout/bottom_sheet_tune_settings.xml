@@ -67,7 +67,7 @@
         </LinearLayout>
 
         <com.google.android.material.materialswitch.MaterialSwitch
-            android:id="@+id/switch_thinking"
+            android:id="@+id/thinking_switch"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp" />
@@ -110,7 +110,7 @@
         </LinearLayout>
 
         <com.google.android.material.materialswitch.MaterialSwitch
-            android:id="@+id/switch_web_search"
+            android:id="@+id/web_search_switch"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp" />

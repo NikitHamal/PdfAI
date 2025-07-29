@@ -3,6 +3,7 @@ package com.pdf.ai;
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.appcompat.app.AlertDialog;
@@ -25,10 +26,13 @@ public class ModelSelectorComponent {
     private Map<String, QwenApiClient.ModelInfo> availableModels;
     private AlertDialog dialog;
 
-    public ModelSelectorComponent(Context context, OnModelSelectedListener listener) {
+    public ModelSelectorComponent(Context context, FrameLayout container) {
         this.context = context;
-        this.listener = listener;
         this.availableModels = QwenApiClient.getAvailableModels();
+    }
+
+    public void setOnModelSelectedListener(OnModelSelectedListener listener) {
+        this.listener = listener;
     }
 
     public View createSelectorView() {

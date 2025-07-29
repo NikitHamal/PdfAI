@@ -7,145 +7,37 @@
     android:gravity="start"
     android:paddingBottom="8dp">
 
-    <!-- Thinking content (expandable) -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/thinking_card"
+    <!-- Thinking content -->
+    <TextView
+        android:id="@+id/thinking_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
+        android:layout_marginBottom="4dp"
+        android:textSize="11sp"
+        android:textColor="@color/md_theme_light_onSurfaceVariant"
+        android:fontFamily="@font/reg"
+        android:lineSpacingExtra="2dp"
         android:visibility="gone"
-        app:cardBackgroundColor="@color/md_theme_light_surfaceVariant"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="0dp">
+        android:background="@drawable/thinking_background"
+        android:padding="8dp" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="12dp">
-
-            <LinearLayout
-                android:id="@+id/thinking_header"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:clickable="true"
-                android:focusable="true"
-                android:background="?attr/selectableItemBackground">
-
-                <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:src="@drawable/ic_psychology_24"
-                    android:tint="?attr/colorPrimary"
-                    android:layout_marginEnd="8dp" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Thinking process"
-                    android:textSize="12sp"
-                    android:textColor="?attr/colorPrimary"
-                    android:fontFamily="@font/reg"
-                    android:textStyle="bold" />
-
-                <ImageView
-                                    android:id="@+id/thinking_expand_icon"
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:src="@drawable/ic_expand_more_24"
-                android:tint="@color/md_theme_light_onSurfaceVariant" />
-
-            </LinearLayout>
-
-                    <TextView
-            android:id="@+id/thinking_content"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:textSize="11sp"
-            android:textColor="@color/md_theme_light_onSurfaceVariant"
-            android:fontFamily="@font/reg"
-                android:lineSpacingExtra="2dp"
-                android:visibility="gone" />
-
-        </LinearLayout>
-
-    </com.google.android.material.card.MaterialCardView>
-
-    <!-- Web search content (expandable) -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/web_search_card"
+    <!-- Web search content -->
+    <TextView
+        android:id="@+id/web_search_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
+        android:layout_marginBottom="4dp"
+        android:textSize="11sp"
+        android:textColor="@color/md_theme_light_onSurfaceVariant"
+        android:fontFamily="@font/reg"
+        android:lineSpacingExtra="2dp"
         android:visibility="gone"
-        app:cardBackgroundColor="@color/md_theme_light_secondaryContainer"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="0dp">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="12dp">
-
-            <LinearLayout
-                android:id="@+id/web_search_header"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:clickable="true"
-                android:focusable="true"
-                android:background="?attr/selectableItemBackground">
-
-                <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:src="@drawable/ic_search_24"
-                    android:tint="?attr/colorSecondary"
-                    android:layout_marginEnd="8dp" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Web search results"
-                    android:textSize="12sp"
-                    android:textColor="?attr/colorSecondary"
-                    android:fontFamily="@font/reg"
-                    android:textStyle="bold" />
-
-                            <ImageView
-                android:id="@+id/web_search_expand_icon"
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:src="@drawable/ic_expand_more_24"
-                android:tint="@color/md_theme_light_onSurfaceVariant" />
-
-            </LinearLayout>
-
-                    <TextView
-            android:id="@+id/web_search_content"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:textSize="11sp"
-            android:textColor="@color/md_theme_light_onSurfaceVariant"
-            android:fontFamily="@font/reg"
-                android:lineSpacingExtra="2dp"
-                android:visibility="gone" />
-
-        </LinearLayout>
-
-    </com.google.android.material.card.MaterialCardView>
+        android:background="@drawable/web_search_background"
+        android:padding="8dp" />
 
     <!-- Main AI response -->
     <TextView
-        android:id="@+id/ai_message_text_view"
+        android:id="@+id/ai_message_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@drawable/ai_message_background"

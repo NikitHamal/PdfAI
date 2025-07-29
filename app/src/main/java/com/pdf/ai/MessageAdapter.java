@@ -1,117 +1,83 @@
 package com.pdf.ai;
 
 import android.content.Context;
-import android.text.Editable;
-import android.text.TextWatcher;
+import android.text.Spanned;
+import android.text.method.LinkMovementMethod;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.button.MaterialButton;
-import com.google.android.material.card.MaterialCardView;
-import com.google.android.material.progressindicator.LinearProgressIndicator; // Import LinearProgressIndicator
-import com.pdf.ai.R;
-import com.pdf.ai.ChatMessage;
-import com.pdf.ai.OutlineData;
+import io.noties.markwon.Markwon;
+import io.noties.markwon.html.HtmlPlugin;
+import io.noties.markwon.image.ImagesPlugin;
 
-import android.content.Intent;
-import android.net.Uri;
-import androidx.core.content.FileProvider;
 import java.util.List;
-import java.io.File;
-import android.content.ContentValues;
-import android.provider.MediaStore;
-import android.os.Environment;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+
+    private static final int VIEW_TYPE_USER = 0;
+    private static final int VIEW_TYPE_AI = 1;
+    private static final int VIEW_TYPE_SUGGESTIONS = 2;
+
     private Context context;
     private List<ChatMessage> messages;
-    private OnOutlineActionListener outlineActionListener;
     private OnSuggestionClickListener suggestionClickListener;
-
-    public interface OnOutlineActionListener {
-        void onApproveOutline(OutlineData outlineData);
-        void onDiscardOutline(int position);
-    }
+    private Markwon markwon;
 
     public interface OnSuggestionClickListener {
-        void onSuggestionClick(String prompt);
+        void onSuggestionClick(String suggestion);
     }
 
-    public MessageAdapter(Context context, List<ChatMessage> messages, OnOutlineActionListener outlineActionListener, OnSuggestionClickListener suggestionClickListener) {
+    public MessageAdapter(Context context, List<ChatMessage> messages, OnSuggestionClickListener suggestionClickListener) {
         this.context = context;
         this.messages = messages;
-        this.outlineActionListener = outlineActionListener;
         this.suggestionClickListener = suggestionClickListener;
-    }
-
-    @Override
-    public int getItemViewType(int position) {
-        return messages.get(position).getType();
+        
+        // Initialize Markwon for markdown rendering
+        this.markwon = Markwon.builder(context)
+                .usePlugin(HtmlPlugin.create())
+                .usePlugin(ImagesPlugin.create())
+                .build();
     }
 
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        LayoutInflater inflater = LayoutInflater.from(parent.getContext());
-        View view;
+        LayoutInflater inflater = LayoutInflater.from(context);
+        
         switch (viewType) {
-            case ChatMessage.TYPE_USER:
-                view = inflater.inflate(R.layout.chat_message_layout_user, parent, false);
-                return new UserMessageViewHolder(view);
-            case ChatMessage.TYPE_AI:
-                view = inflater.inflate(R.layout.chat_message_layout_ai, parent, false);
-                return new AiMessageViewHolder(view);
-            case ChatMessage.TYPE_PROGRESS:
-                view = inflater.inflate(R.layout.chat_item_progress, parent, false);
-                return new ProgressViewHolder(view);
-            case ChatMessage.TYPE_OUTLINE:
-                view = inflater.inflate(R.layout.chat_item_outline, parent, false);
-                return new OutlineViewHolder(view, outlineActionListener);
-            case ChatMessage.TYPE_PDF_DOWNLOAD:
-                view = inflater.inflate(R.layout.chat_item_pdf_download, parent, false);
-                return new PdfDownloadViewHolder(view);
-            case ChatMessage.TYPE_SUGGESTIONS:
-                view = inflater.inflate(R.layout.chat_item_suggestions, parent, false);
-                return new SuggestionsViewHolder(view, suggestionClickListener);
+            case VIEW_TYPE_USER:
+                View userView = inflater.inflate(R.layout.chat_message_layout_user, parent, false);
+                return new UserMessageViewHolder(userView);
+            case VIEW_TYPE_AI:
+                View aiView = inflater.inflate(R.layout.chat_message_layout_ai, parent, false);
+                return new AiMessageViewHolder(aiView);
+            case VIEW_TYPE_SUGGESTIONS:
+                View suggestionsView = inflater.inflate(R.layout.chat_item_suggestions, parent, false);
+                return new SuggestionsViewHolder(suggestionsView);
             default:
-                throw new IllegalArgumentException("Unknown view type: " + viewType);
+                throw new IllegalArgumentException("Invalid view type");
         }
     }
 
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         ChatMessage message = messages.get(position);
-        switch (message.getType()) {
-            case ChatMessage.TYPE_USER:
+        
+        switch (holder.getItemViewType()) {
+            case VIEW_TYPE_USER:
                 ((UserMessageViewHolder) holder).bind(message);
                 break;
-            case ChatMessage.TYPE_AI:
+            case VIEW_TYPE_AI:
                 ((AiMessageViewHolder) holder).bind(message);
                 break;
-            case ChatMessage.TYPE_PROGRESS:
-                ((ProgressViewHolder) holder).bind(message);
-                break;
-            case ChatMessage.TYPE_OUTLINE:
-                ((OutlineViewHolder) holder).bind(message);
-                break;
-            case ChatMessage.TYPE_PDF_DOWNLOAD:
-                ((PdfDownloadViewHolder) holder).bind(message);
-                break;
-            case ChatMessage.TYPE_SUGGESTIONS:
+            case VIEW_TYPE_SUGGESTIONS:
                 ((SuggestionsViewHolder) holder).bind(message);
                 break;
         }
@@ -122,325 +88,161 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         return messages.size();
     }
 
-    // ViewHolders
-    static class UserMessageViewHolder extends RecyclerView.ViewHolder {
-        TextView messageTextView;
-
-        public UserMessageViewHolder(@NonNull View itemView) {
-            super(itemView);
-            messageTextView = itemView.findViewById(R.id.user_message_text_view);
-        }
-
-        void bind(ChatMessage message) {
-            messageTextView.setText(message.getMessage());
+    @Override
+    public int getItemViewType(int position) {
+        ChatMessage message = messages.get(position);
+        switch (message.getType()) {
+            case ChatMessage.TYPE_USER:
+                return VIEW_TYPE_USER;
+            case ChatMessage.TYPE_AI:
+                return VIEW_TYPE_AI;
+            case ChatMessage.TYPE_SUGGESTIONS:
+                return VIEW_TYPE_SUGGESTIONS;
+            default:
+                return VIEW_TYPE_AI;
         }
     }
 
-    static class AiMessageViewHolder extends RecyclerView.ViewHolder {
-        TextView messageTextView;
-        MaterialCardView thinkingCard;
-        MaterialCardView webSearchCard;
-        TextView thinkingContent;
-        TextView webSearchContent;
-        LinearLayout thinkingHeader;
-        LinearLayout webSearchHeader;
-        ImageView thinkingExpandIcon;
-        ImageView webSearchExpandIcon;
+    class UserMessageViewHolder extends RecyclerView.ViewHolder {
+        private TextView messageText;
 
-        public AiMessageViewHolder(@NonNull View itemView) {
+        UserMessageViewHolder(@NonNull View itemView) {
             super(itemView);
-            messageTextView = itemView.findViewById(R.id.ai_message_text_view);
-            thinkingCard = itemView.findViewById(R.id.thinking_card);
-            webSearchCard = itemView.findViewById(R.id.web_search_card);
-            thinkingContent = itemView.findViewById(R.id.thinking_content);
-            webSearchContent = itemView.findViewById(R.id.web_search_content);
-            thinkingHeader = itemView.findViewById(R.id.thinking_header);
-            webSearchHeader = itemView.findViewById(R.id.web_search_header);
-            thinkingExpandIcon = itemView.findViewById(R.id.thinking_expand_icon);
-            webSearchExpandIcon = itemView.findViewById(R.id.web_search_expand_icon);
+            messageText = itemView.findViewById(R.id.user_message_text);
         }
 
         void bind(ChatMessage message) {
-            messageTextView.setText(message.getMessage());
+            messageText.setText(message.getMessage());
+        }
+    }
 
-            // Handle thinking content
-            if (message.hasThinking()) {
-                thinkingCard.setVisibility(View.VISIBLE);
-                thinkingContent.setText(message.getThinkingContent());
+    class AiMessageViewHolder extends RecyclerView.ViewHolder {
+        private TextView messageText;
+        private TextView thinkingText;
+        private TextView webSearchText;
+
+        AiMessageViewHolder(@NonNull View itemView) {
+            super(itemView);
+            messageText = itemView.findViewById(R.id.ai_message_text);
+            thinkingText = itemView.findViewById(R.id.thinking_text);
+            webSearchText = itemView.findViewById(R.id.web_search_text);
+            
+            // Enable links in text
+            messageText.setMovementMethod(LinkMovementMethod.getInstance());
+        }
+
+        void bind(ChatMessage message) {
+            String content = message.getDisplayContent();
+            
+            // Process content for code blocks and markdown
+            if (content != null && !content.isEmpty()) {
+                // Extract and replace code blocks with custom views
+                String processedContent = processCodeBlocks(content);
                 
-                thinkingHeader.setOnClickListener(v -> {
-                    boolean isExpanded = thinkingContent.getVisibility() == View.VISIBLE;
-                    thinkingContent.setVisibility(isExpanded ? View.GONE : View.VISIBLE);
-                    thinkingExpandIcon.setRotation(isExpanded ? 0f : 180f);
-                });
+                // Render markdown
+                Spanned spanned = markwon.toMarkdown(processedContent);
+                messageText.setText(spanned);
             } else {
-                thinkingCard.setVisibility(View.GONE);
+                messageText.setText("");
             }
-
-            // Handle web search content
-            if (message.hasWebSearch()) {
-                webSearchCard.setVisibility(View.VISIBLE);
-                webSearchContent.setText(message.getWebSearchContent());
+            
+            // Show thinking content if available
+            if (message.hasThinking() && message.getThinkingContent() != null) {
+                thinkingText.setVisibility(View.VISIBLE);
+                thinkingText.setText("🤔 " + message.getThinkingContent());
+            } else {
+                thinkingText.setVisibility(View.GONE);
+            }
+            
+            // Show web search content if available
+            if (message.hasWebSearch() && message.getWebSearchContent() != null) {
+                webSearchText.setVisibility(View.VISIBLE);
+                webSearchText.setText("🔍 " + message.getWebSearchContent());
+            } else {
+                webSearchText.setVisibility(View.GONE);
+            }
+        }
+        
+        private String processCodeBlocks(String content) {
+            // Pattern to match code blocks: ```language\ncode\n```
+            Pattern codeBlockPattern = Pattern.compile("```(\\w+)?\\n([\\s\\S]*?)```");
+            Matcher matcher = codeBlockPattern.matcher(content);
+            
+            StringBuffer result = new StringBuffer();
+            while (matcher.find()) {
+                String language = matcher.group(1);
+                String code = matcher.group(2);
                 
-                webSearchHeader.setOnClickListener(v -> {
-                    boolean isExpanded = webSearchContent.getVisibility() == View.VISIBLE;
-                    webSearchContent.setVisibility(isExpanded ? View.GONE : View.VISIBLE);
-                    webSearchExpandIcon.setRotation(isExpanded ? 0f : 180f);
-                });
-            } else {
-                webSearchCard.setVisibility(View.GONE);
+                // Replace with simple HTML code block
+                String replacement = "<pre><code>" + escapeHtml(code) + "</code></pre>";
+                matcher.appendReplacement(result, replacement);
             }
+            matcher.appendTail(result);
+            
+            return result.toString();
         }
-    }
-
-    static class ProgressViewHolder extends RecyclerView.ViewHolder {
-        LinearProgressIndicator progressBar; // Changed from ProgressBar to LinearProgressIndicator
-        TextView statusTextView;
-
-        public ProgressViewHolder(@NonNull View itemView) {
-            super(itemView);
-            progressBar = itemView.findViewById(R.id.progress_bar);
-            statusTextView = itemView.findViewById(R.id.progress_status_text);
-        }
-
-        void bind(ChatMessage message) {
-            statusTextView.setText(message.getProgressStatus());
-            progressBar.setProgress(message.getProgressValue()); // Set the progress value
-        }
-    }
-
-    class OutlineViewHolder extends RecyclerView.ViewHolder {
-        EditText pdfTitleEditText;
-        LinearLayout sectionsContainer;
-        MaterialButton addSectionButton;
-        MaterialButton discardButton;
-        MaterialButton approveButton;
-        ImageView addTitleSectionButton;
-
-        OnOutlineActionListener listener;
-
-        public OutlineViewHolder(@NonNull View itemView, OnOutlineActionListener listener) {
-            super(itemView);
-            this.listener = listener;
-            pdfTitleEditText = itemView.findViewById(R.id.pdf_title_edit_text);
-            sectionsContainer = itemView.findViewById(R.id.outline_sections_container);
-            addSectionButton = itemView.findViewById(R.id.add_section_button);
-            discardButton = itemView.findViewById(R.id.discard_button);
-            approveButton = itemView.findViewById(R.id.approve_button);
-            addTitleSectionButton = itemView.findViewById(R.id.title_ai_enhance);
-        }
-
-        void bind(ChatMessage message) {
-            OutlineData outlineData = message.getOutlineData();
-            if (outlineData != null) {
-                pdfTitleEditText.setText(outlineData.getPdfTitle());
-                sectionsContainer.removeAllViews();
-                for (String section : outlineData.getSections()) {
-                    addSectionView(section, sectionsContainer, outlineData);
-                }
-
-                addTitleSectionButton.setOnClickListener(v -> {
-                    String newSectionTitle = "New Section";
-                    outlineData.getSections().add(0, newSectionTitle); // Add at the beginning for title sections
-                    sectionsContainer.removeAllViews(); // Re-add all sections to reflect change
-                    for (String section : outlineData.getSections()) {
-                        addSectionView(section, sectionsContainer, outlineData);
-                    }
-                });
-
-                addSectionButton.setOnClickListener(v -> {
-                    String newSectionTitle = "New Section";
-                    outlineData.getSections().add(newSectionTitle);
-                    addSectionView(newSectionTitle, sectionsContainer, outlineData);
-                });
-
-                pdfTitleEditText.addTextChangedListener(new TextWatcher() {
-                    @Override
-                    public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-                    @Override
-                    public void onTextChanged(CharSequence s, int start, int before, int count) {}
-                    @Override
-                    public void afterTextChanged(Editable s) {
-                        outlineData.setPdfTitle(s.toString());
-                    }
-                });
-
-                discardButton.setOnClickListener(v -> {
-                    if (listener != null) {
-                        listener.onDiscardOutline(getAdapterPosition());
-                    }
-                });
-
-                approveButton.setOnClickListener(v -> {
-                    if (listener != null) {
-                        listener.onApproveOutline(outlineData);
-                    }
-                });
-            }
-        }
-
-        private void addSectionView(String sectionTitle, LinearLayout container, OutlineData outlineData) {
-            View sectionView = LayoutInflater.from(context).inflate(R.layout.outline_section_item, container, false);
-            EditText sectionTitleEditText = sectionView.findViewById(R.id.section_title_edit_text);
-            ImageView editButton = sectionView.findViewById(R.id.edit_section_button);
-            ImageView deleteButton = sectionView.findViewById(R.id.delete_section_button);
-
-            sectionTitleEditText.setText(sectionTitle);
-            sectionTitleEditText.setEnabled(false); // Initially disabled
-
-            // Edit button functionality
-            editButton.setOnClickListener(v -> {
-                sectionTitleEditText.setEnabled(true);
-                sectionTitleEditText.requestFocus();
-                sectionTitleEditText.setSelection(sectionTitleEditText.getText().length());
-            });
-
-            // Save changes on focus loss or text change
-            sectionTitleEditText.addTextChangedListener(new TextWatcher() {
-                @Override
-                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-                @Override
-                public void onTextChanged(CharSequence s, int start, int before, int count) {
-                    int index = container.indexOfChild(sectionView);
-                    if (index != -1) {
-                        outlineData.getSections().set(index, s.toString());
-                    }
-                }
-                @Override
-                public void afterTextChanged(Editable s) {}
-            });
-
-            sectionTitleEditText.setOnFocusChangeListener((v, hasFocus) -> {
-                if (!hasFocus) {
-                    sectionTitleEditText.setEnabled(false);
-                }
-            });
-
-            // Delete button functionality
-            deleteButton.setOnClickListener(v -> {
-                int index = container.indexOfChild(sectionView);
-                if (index != -1) {
-                    container.removeView(sectionView);
-                    outlineData.getSections().remove(index);
-                }
-            });
-
-            container.addView(sectionView);
-        }
-    }
-
-    class PdfDownloadViewHolder extends RecyclerView.ViewHolder {
-        TextView pdfIntroTextView;
-        TextView pdfFileNameTextView;
-        ImageView downloadIcon;
-        LinearLayout pdfDownloadContainer;
-
-        public PdfDownloadViewHolder(@NonNull View itemView) {
-            super(itemView);
-            pdfIntroTextView = itemView.findViewById(R.id.pdf_intro_text_view);
-            pdfFileNameTextView = itemView.findViewById(R.id.pdf_file_name_text_view);
-            downloadIcon = itemView.findViewById(R.id.download_icon); // Changed from view_icon
-            pdfDownloadContainer = itemView.findViewById(R.id.pdf_download_container);
-        }
-
-        void bind(ChatMessage message) {
-            pdfIntroTextView.setText("Here's a comprehensive PDF on '" + message.getPdfTitle() + "':");
-            pdfFileNameTextView.setText(new File(message.getFilePath()).getName());
-
-            // Click the layout to open the PDF
-            pdfDownloadContainer.setOnClickListener(v -> openPdf(message.getFilePath()));
-            // Click the icon to download the PDF
-            downloadIcon.setOnClickListener(v -> downloadPdf(message.getFilePath()));
-        }
-
-        private void openPdf(String filePath) {
-            File pdfFile = new File(filePath);
-            if (!pdfFile.exists()) {
-                Toast.makeText(context, "File not found. Please generate it again.", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            // Use FileProvider to create a content URI for secure sharing
-            Uri pdfUri = FileProvider.getUriForFile(context, context.getPackageName() + ".provider", pdfFile);
-
-            Intent intent = new Intent(Intent.ACTION_VIEW);
-            intent.setDataAndType(pdfUri, "application/pdf");
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY); // Optional: activity won't be kept in history stack
-
-            try {
-                context.startActivity(intent);
-            } catch (Exception e) {
-                Toast.makeText(context, "No application available to view PDF", Toast.LENGTH_SHORT).show();
-            }
-        }
-
-        private void downloadPdf(String filePath) {
-            File sourceFile = new File(filePath);
-            if (!sourceFile.exists()) {
-                Toast.makeText(context, "File not found. Please generate it again.", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            // Use MediaStore to save to the public Downloads folder
-            ContentValues values = new ContentValues();
-            values.put(MediaStore.MediaColumns.DISPLAY_NAME, sourceFile.getName());
-            values.put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf");
-            values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
-
-            Uri uri = context.getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
-            if (uri != null) {
-                try (InputStream in = new FileInputStream(sourceFile);
-                     OutputStream out = context.getContentResolver().openOutputStream(uri)) {
-                    byte[] buf = new byte[1024];
-                    int len;
-                    while ((len = in.read(buf)) > 0) {
-                        out.write(buf, 0, len);
-                    }
-                    Toast.makeText(context, "PDF downloaded to Downloads folder.", Toast.LENGTH_LONG).show();
-                } catch (IOException e) {
-                    Toast.makeText(context, "Failed to download PDF.", Toast.LENGTH_SHORT).show();
-                }
-            } else {
-                Toast.makeText(context, "Failed to create new MediaStore record.", Toast.LENGTH_SHORT).show();
-            }
+        
+        private String escapeHtml(String text) {
+            return text.replace("&", "&amp;")
+                      .replace("<", "&lt;")
+                      .replace(">", "&gt;")
+                      .replace("\"", "&quot;")
+                      .replace("'", "&#39;");
         }
     }
 
     class SuggestionsViewHolder extends RecyclerView.ViewHolder {
-        MaterialCardView suggestion1, suggestion2, suggestion3, suggestion4;
-        OnSuggestionClickListener listener;
+        private View suggestion1, suggestion2, suggestion3, suggestion4;
+        private TextView suggestionText1, suggestionText2, suggestionText3, suggestionText4;
 
-        public SuggestionsViewHolder(@NonNull View itemView, OnSuggestionClickListener listener) {
+        SuggestionsViewHolder(@NonNull View itemView) {
             super(itemView);
-            this.listener = listener;
-            suggestion1 = itemView.findViewById(R.id.suggestion1);
-            suggestion2 = itemView.findViewById(R.id.suggestion2);
-            suggestion3 = itemView.findViewById(R.id.suggestion3);
-            suggestion4 = itemView.findViewById(R.id.suggestion4);
+            suggestion1 = itemView.findViewById(R.id.suggestion_1);
+            suggestion2 = itemView.findViewById(R.id.suggestion_2);
+            suggestion3 = itemView.findViewById(R.id.suggestion_3);
+            suggestion4 = itemView.findViewById(R.id.suggestion_4);
+            
+            suggestionText1 = itemView.findViewById(R.id.suggestion_text_1);
+            suggestionText2 = itemView.findViewById(R.id.suggestion_text_2);
+            suggestionText3 = itemView.findViewById(R.id.suggestion_text_3);
+            suggestionText4 = itemView.findViewById(R.id.suggestion_text_4);
+
+            setupClickListeners();
+        }
+
+        private void setupClickListeners() {
+            suggestion1.setOnClickListener(v -> {
+                if (suggestionClickListener != null) {
+                    suggestionClickListener.onSuggestionClick(suggestionText1.getText().toString());
+                }
+            });
+
+            suggestion2.setOnClickListener(v -> {
+                if (suggestionClickListener != null) {
+                    suggestionClickListener.onSuggestionClick(suggestionText2.getText().toString());
+                }
+            });
+
+            suggestion3.setOnClickListener(v -> {
+                if (suggestionClickListener != null) {
+                    suggestionClickListener.onSuggestionClick(suggestionText3.getText().toString());
+                }
+            });
+
+            suggestion4.setOnClickListener(v -> {
+                if (suggestionClickListener != null) {
+                    suggestionClickListener.onSuggestionClick(suggestionText4.getText().toString());
+                }
+            });
         }
 
         void bind(ChatMessage message) {
-            suggestion1.setOnClickListener(v -> {
-                if (listener != null) {
-                    listener.onSuggestionClick("Create a PDF about the history of artificial intelligence.");
-                }
-            });
-            suggestion2.setOnClickListener(v -> {
-                if (listener != null) {
-                    listener.onSuggestionClick("Generate a PDF on the benefits of renewable energy.");
-                }
-            });
-            suggestion3.setOnClickListener(v -> {
-                if (listener != null) {
-                    listener.onSuggestionClick("Make a PDF about the importance of mental health.");
-                }
-            });
-            suggestion4.setOnClickListener(v -> {
-                if (listener != null) {
-                    listener.onSuggestionClick("Create a PDF on the art of storytelling.");
-                }
-            });
+            // Set suggestion texts dynamically based on message content
+            String[] suggestions = message.getMessage().split("\\|");
+            if (suggestions.length >= 1) suggestionText1.setText(suggestions[0].trim());
+            if (suggestions.length >= 2) suggestionText2.setText(suggestions[1].trim());
+            if (suggestions.length >= 3) suggestionText3.setText(suggestions[2].trim());
+            if (suggestions.length >= 4) suggestionText4.setText(suggestions[3].trim());
         }
     }
 }
