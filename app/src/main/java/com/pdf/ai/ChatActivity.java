@@ -243,10 +243,11 @@ public class ChatActivity extends AppCompatActivity
 
         // Add a placeholder for the AI's response
         final ChatMessage aiMessage = new ChatMessage(ChatMessage.TYPE_AI, "");
-        chatMessages.add(aiMessage);
-        final int messagePosition = chatMessages.size() - 1;
-        messageAdapter.notifyItemInserted(messagePosition);
-        chatRecyclerView.scrollToPosition(messagePosition);
+        runOnUiThread(() -> {
+            chatMessages.add(aiMessage);
+            messageAdapter.notifyItemInserted(chatMessages.size() - 1);
+            chatRecyclerView.scrollToPosition(chatMessages.size() - 1);
+        });
 
         qwenApiClient.sendCompletion(
             currentChatId,
@@ -270,7 +271,10 @@ public class ChatActivity extends AppCompatActivity
                             if (!thinking.isEmpty()) aiMessage.setThinkingContent(thinking);
                             if (!webSearch.isEmpty()) aiMessage.setWebSearchContent(webSearch);
 
-                            messageAdapter.notifyItemChanged(messagePosition);
+                            int messagePosition = chatMessages.indexOf(aiMessage);
+                            if (messagePosition != -1) {
+                                messageAdapter.notifyItemChanged(messagePosition);
+                            }
                             saveConversationMessage(aiMessage);
                         } catch (JSONException e) {
                             Toast.makeText(ChatActivity.this, "Error parsing response", Toast.LENGTH_SHORT).show();
@@ -282,9 +286,11 @@ public class ChatActivity extends AppCompatActivity
                 public void onFailure(String error) {
                     runOnUiThread(() -> {
                         removeProgressMessage();
-                        // Optionally remove the placeholder message on failure
-                        chatMessages.remove(messagePosition);
-                        messageAdapter.notifyItemRemoved(messagePosition);
+                        int messagePosition = chatMessages.indexOf(aiMessage);
+                        if (messagePosition != -1) {
+                            chatMessages.remove(messagePosition);
+                            messageAdapter.notifyItemRemoved(messagePosition);
+                        }
                         Toast.makeText(ChatActivity.this, "Error: " + error, Toast.LENGTH_SHORT).show();
                     });
                 }
@@ -294,8 +300,11 @@ public class ChatActivity extends AppCompatActivity
                     runOnUiThread(() -> {
                         if (type.equals("text")) {
                             aiMessage.setMessage(aiMessage.getMessage() + content);
-                            messageAdapter.notifyItemChanged(messagePosition);
-                            chatRecyclerView.scrollToPosition(messagePosition);
+                            int messagePosition = chatMessages.indexOf(aiMessage);
+                            if (messagePosition != -1) {
+                                messageAdapter.notifyItemChanged(messagePosition);
+                                chatRecyclerView.scrollToPosition(messagePosition);
+                            }
                         }
                     });
                 }
