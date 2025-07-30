@@ -241,6 +241,13 @@ public class ChatActivity extends AppCompatActivity
         showProgressMessage("Sending request...", 0);
         String enhancedMessage = instructionManager.getGeneralChatInstructions(message, thinkingEnabled, webSearchEnabled);
 
+        // Add a placeholder for the AI's response
+        final ChatMessage aiMessage = new ChatMessage(ChatMessage.TYPE_AI, "");
+        chatMessages.add(aiMessage);
+        final int messagePosition = chatMessages.size() - 1;
+        messageAdapter.notifyItemInserted(messagePosition);
+        chatRecyclerView.scrollToPosition(messagePosition);
+
         qwenApiClient.sendCompletion(
             currentChatId,
             selectedModel,
@@ -259,14 +266,12 @@ public class ChatActivity extends AppCompatActivity
                             String thinking = responseObj.optString("thinking", "");
                             String webSearch = responseObj.optString("web_search", "");
 
-                            ChatMessage aiMessage = new ChatMessage(ChatMessage.TYPE_AI, answer);
+                            aiMessage.setMessage(answer); // Set the final message
                             if (!thinking.isEmpty()) aiMessage.setThinkingContent(thinking);
                             if (!webSearch.isEmpty()) aiMessage.setWebSearchContent(webSearch);
 
-                            chatMessages.add(aiMessage);
+                            messageAdapter.notifyItemChanged(messagePosition);
                             saveConversationMessage(aiMessage);
-                            messageAdapter.notifyItemInserted(chatMessages.size() - 1);
-                            chatRecyclerView.scrollToPosition(chatMessages.size() - 1);
                         } catch (JSONException e) {
                             Toast.makeText(ChatActivity.this, "Error parsing response", Toast.LENGTH_SHORT).show();
                         }
@@ -277,36 +282,51 @@ public class ChatActivity extends AppCompatActivity
                 public void onFailure(String error) {
                     runOnUiThread(() -> {
                         removeProgressMessage();
+                        // Optionally remove the placeholder message on failure
+                        chatMessages.remove(messagePosition);
+                        messageAdapter.notifyItemRemoved(messagePosition);
                         Toast.makeText(ChatActivity.this, "Error: " + error, Toast.LENGTH_SHORT).show();
                     });
                 }
 
                 @Override
-                public void onStreamUpdate(String type, String content) {}
+                public void onStreamUpdate(String type, String content) {
+                    runOnUiThread(() -> {
+                        if (type.equals("text")) {
+                            aiMessage.setMessage(aiMessage.getMessage() + content);
+                            messageAdapter.notifyItemChanged(messagePosition);
+                            chatRecyclerView.scrollToPosition(messagePosition);
+                        }
+                    });
+                }
             }
         );
     }
 
     private void showProgressMessage(String status, int progressValue) {
-        if (chatMessages.isEmpty() || chatMessages.get(chatMessages.size() - 1).getType() != ChatMessage.TYPE_PROGRESS) {
-            chatMessages.add(new ChatMessage(ChatMessage.TYPE_PROGRESS, null, status, progressValue));
-            messageAdapter.notifyItemInserted(chatMessages.size() - 1);
-        } else {
-            updateProgressMessage(status, progressValue);
-        }
-        chatRecyclerView.scrollToPosition(chatMessages.size() - 1);
-        updateEmptyState();
+        runOnUiThread(() -> {
+            if (chatMessages.isEmpty() || chatMessages.get(chatMessages.size() - 1).getType() != ChatMessage.TYPE_PROGRESS) {
+                chatMessages.add(new ChatMessage(ChatMessage.TYPE_PROGRESS, null, status, progressValue));
+                messageAdapter.notifyItemInserted(chatMessages.size() - 1);
+            } else {
+                updateProgressMessage(status, progressValue);
+            }
+            chatRecyclerView.scrollToPosition(chatMessages.size() - 1);
+            updateEmptyState();
+        });
     }
 
     private void updateProgressMessage(String status, int progressValue) {
-        if (!chatMessages.isEmpty()) {
-            ChatMessage lastMessage = chatMessages.get(chatMessages.size() - 1);
-            if (lastMessage.getType() == ChatMessage.TYPE_PROGRESS) {
-                lastMessage.setProgressStatus(status);
-                lastMessage.setProgressValue(progressValue);
-                messageAdapter.notifyItemChanged(chatMessages.size() - 1);
+        runOnUiThread(() -> {
+            if (!chatMessages.isEmpty()) {
+                ChatMessage lastMessage = chatMessages.get(chatMessages.size() - 1);
+                if (lastMessage.getType() == ChatMessage.TYPE_PROGRESS) {
+                    lastMessage.setProgressStatus(status);
+                    lastMessage.setProgressValue(progressValue);
+                    messageAdapter.notifyItemChanged(chatMessages.size() - 1);
+                }
             }
-        }
+        });
     }
 
     private void removeProgressMessage() {

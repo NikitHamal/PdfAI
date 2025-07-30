@@ -47,6 +47,10 @@ public class ChatMessage {
         return message;
     }
 
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
     public String getProgressStatus() {
         return progressStatus;
     }
