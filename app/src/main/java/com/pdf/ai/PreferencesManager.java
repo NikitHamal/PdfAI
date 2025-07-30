@@ -47,10 +47,6 @@ public class PreferencesManager {
                 if (message.getMessage() != null) {
                     jsonObject.put("message", message.getMessage());
                 }
-                if (message.getProgressStatus() != null) {
-                    jsonObject.put("progressStatus", message.getProgressStatus());
-                }
-                jsonObject.put("progressValue", message.getProgressValue());
                 jsonArray.put(jsonObject);
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -69,10 +65,7 @@ public class PreferencesManager {
                     JSONObject jsonObject = jsonArray.getJSONObject(i);
                     int type = jsonObject.getInt("type");
                     String message = jsonObject.optString("message", null);
-                    String progressStatus = jsonObject.optString("progressStatus", null);
-                    int progressValue = jsonObject.optInt("progressValue", 0);
-
-                    chatMessages.add(new ChatMessage(type, message, progressStatus, progressValue));
+                    chatMessages.add(new ChatMessage(type, message));
                 }
             } catch (JSONException e) {
                 e.printStackTrace();

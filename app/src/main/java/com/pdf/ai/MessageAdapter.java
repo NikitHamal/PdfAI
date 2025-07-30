@@ -78,7 +78,7 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     }
 
     // ViewHolders
-    static class UserMessageViewHolder extends RecyclerView.ViewHolder {
+    class UserMessageViewHolder extends RecyclerView.ViewHolder {
         TextView messageTextView;
 
         public UserMessageViewHolder(@NonNull View itemView) {
@@ -91,7 +91,7 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         }
     }
 
-    static class AiMessageViewHolder extends RecyclerView.ViewHolder {
+    class AiMessageViewHolder extends RecyclerView.ViewHolder {
         TextView messageTextView;
         MaterialCardView thinkingCard;
         MaterialCardView webSearchCard;

@@ -22,7 +22,7 @@ public class ChatMessage {
 
     // Constructor for suggestion messages
      public ChatMessage(int type) {
-        this(type, null, null, 0);
+        this(type, null);
     }
 
 
