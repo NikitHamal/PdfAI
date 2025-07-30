@@ -12,20 +12,23 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import java.util.List;
+import io.noties.markwon.Markwon;
 
 public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private Context context;
     private List<ChatMessage> messages;
     private OnSuggestionClickListener suggestionClickListener;
+    private Markwon markwon;
 
     public interface OnSuggestionClickListener {
         void onSuggestionClick(String prompt);
     }
 
-    public MessageAdapter(Context context, List<ChatMessage> messages, OnSuggestionClickListener suggestionClickListener) {
+    public MessageAdapter(Context context, List<ChatMessage> messages, OnSuggestionClickListener suggestionClickListener, Markwon markwon) {
         this.context = context;
         this.messages = messages;
         this.suggestionClickListener = suggestionClickListener;
+        this.markwon = markwon;
     }
 
     @Override
@@ -45,9 +48,6 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             case ChatMessage.TYPE_AI:
                 view = inflater.inflate(R.layout.chat_message_layout_ai, parent, false);
                 return new AiMessageViewHolder(view);
-            case ChatMessage.TYPE_PROGRESS:
-                view = inflater.inflate(R.layout.chat_item_progress, parent, false);
-                return new ProgressViewHolder(view);
             case ChatMessage.TYPE_SUGGESTIONS:
                 view = inflater.inflate(R.layout.chat_item_suggestions, parent, false);
                 return new SuggestionsViewHolder(view, suggestionClickListener);
@@ -65,9 +65,6 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 break;
             case ChatMessage.TYPE_AI:
                 ((AiMessageViewHolder) holder).bind(message);
-                break;
-            case ChatMessage.TYPE_PROGRESS:
-                ((ProgressViewHolder) holder).bind(message);
                 break;
             case ChatMessage.TYPE_SUGGESTIONS:
                 ((SuggestionsViewHolder) holder).bind(message);
@@ -119,7 +116,7 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         }
 
         void bind(ChatMessage message) {
-            messageTextView.setText(message.getMessage());
+            markwon.setMarkdown(messageTextView, message.getMessage());
 
             // Handle thinking content
             if (message.hasThinking()) {
@@ -151,21 +148,6 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         }
     }
 
-    static class ProgressViewHolder extends RecyclerView.ViewHolder {
-        LinearProgressIndicator progressBar;
-        TextView statusTextView;
-
-        public ProgressViewHolder(@NonNull View itemView) {
-            super(itemView);
-            progressBar = itemView.findViewById(R.id.progress_bar);
-            statusTextView = itemView.findViewById(R.id.progress_status_text);
-        }
-
-        void bind(ChatMessage message) {
-            statusTextView.setText(message.getProgressStatus());
-            progressBar.setProgress(message.getProgressValue());
-        }
-    }
 
     class SuggestionsViewHolder extends RecyclerView.ViewHolder {
         MaterialCardView suggestionCard1, suggestionCard2, suggestionCard3, suggestionCard4;

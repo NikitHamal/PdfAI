@@ -25,6 +25,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.json.JSONException;
 import org.json.JSONObject;
+import io.noties.markwon.Markwon;
 
 public class ChatActivity extends AppCompatActivity
     implements MessageAdapter.OnSuggestionClickListener, ModelSelectorComponent.OnModelSelectedListener {
@@ -50,10 +51,12 @@ public class ChatActivity extends AppCompatActivity
     private DialogManager dialogManager;
     private InstructionManager instructionManager;
     private ConversationManager conversationManager;
+    private Markwon markwon;
 
     private String currentChatId;
     private String currentParentId;
     private ConversationManager.Conversation currentConversation;
+    private boolean isStreaming = false;
 
     private ExecutorService executorService;
 
@@ -70,6 +73,7 @@ public class ChatActivity extends AppCompatActivity
         dialogManager = new DialogManager(this, preferencesManager);
         instructionManager = new InstructionManager(this);
         conversationManager = new ConversationManager(this);
+        markwon = Markwon.create(this);
 
         geminiApiKey = preferencesManager.getGeminiApiKey();
         selectedModel = preferencesManager.getSelectedModel();
@@ -108,7 +112,7 @@ public class ChatActivity extends AppCompatActivity
 
     private void setupRecyclerView() {
         chatMessages = new ArrayList<>();
-        messageAdapter = new MessageAdapter(this, chatMessages, this);
+        messageAdapter = new MessageAdapter(this, chatMessages, this, markwon);
         chatRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         chatRecyclerView.setAdapter(messageAdapter);
     }
@@ -238,7 +242,6 @@ public class ChatActivity extends AppCompatActivity
     }
 
     private void sendQwenCompletion(String message) {
-        showProgressMessage("Sending request...", 0);
         String enhancedMessage = instructionManager.getGeneralChatInstructions(message, thinkingEnabled, webSearchEnabled);
 
         // Add a placeholder for the AI's response
@@ -260,7 +263,7 @@ public class ChatActivity extends AppCompatActivity
                 @Override
                 public void onSuccess(String response) {
                     runOnUiThread(() -> {
-                        removeProgressMessage();
+                        isStreaming = false;
                         try {
                             JSONObject responseObj = new JSONObject(response);
                             String answer = responseObj.optString("answer", "");
@@ -285,7 +288,7 @@ public class ChatActivity extends AppCompatActivity
                 @Override
                 public void onFailure(String error) {
                     runOnUiThread(() -> {
-                        removeProgressMessage();
+                        isStreaming = false;
                         int messagePosition = chatMessages.indexOf(aiMessage);
                         if (messagePosition != -1) {
                             chatMessages.remove(messagePosition);
@@ -299,6 +302,9 @@ public class ChatActivity extends AppCompatActivity
                 public void onStreamUpdate(String type, String content) {
                     runOnUiThread(() -> {
                         if (type.equals("text")) {
+                            if (!isStreaming) {
+                                isStreaming = true;
+                            }
                             aiMessage.setMessage(aiMessage.getMessage() + content);
                             int messagePosition = chatMessages.indexOf(aiMessage);
                             if (messagePosition != -1) {
@@ -312,42 +318,6 @@ public class ChatActivity extends AppCompatActivity
         );
     }
 
-    private void showProgressMessage(String status, int progressValue) {
-        runOnUiThread(() -> {
-            if (chatMessages.isEmpty() || chatMessages.get(chatMessages.size() - 1).getType() != ChatMessage.TYPE_PROGRESS) {
-                chatMessages.add(new ChatMessage(ChatMessage.TYPE_PROGRESS, null, status, progressValue));
-                messageAdapter.notifyItemInserted(chatMessages.size() - 1);
-            } else {
-                updateProgressMessage(status, progressValue);
-            }
-            chatRecyclerView.scrollToPosition(chatMessages.size() - 1);
-            updateEmptyState();
-        });
-    }
-
-    private void updateProgressMessage(String status, int progressValue) {
-        runOnUiThread(() -> {
-            if (!chatMessages.isEmpty()) {
-                ChatMessage lastMessage = chatMessages.get(chatMessages.size() - 1);
-                if (lastMessage.getType() == ChatMessage.TYPE_PROGRESS) {
-                    lastMessage.setProgressStatus(status);
-                    lastMessage.setProgressValue(progressValue);
-                    messageAdapter.notifyItemChanged(chatMessages.size() - 1);
-                }
-            }
-        });
-    }
-
-    private void removeProgressMessage() {
-        if (!chatMessages.isEmpty()) {
-            ChatMessage lastMessage = chatMessages.get(chatMessages.size() - 1);
-            if (lastMessage.getType() == ChatMessage.TYPE_PROGRESS) {
-                chatMessages.remove(chatMessages.size() - 1);
-                messageAdapter.notifyItemRemoved(chatMessages.size());
-            }
-        }
-        updateEmptyState();
-    }
 
     @Override
     public void onSuggestionClick(String suggestion) {

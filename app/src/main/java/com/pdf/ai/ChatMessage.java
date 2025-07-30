@@ -3,13 +3,10 @@ package com.pdf.ai;
 public class ChatMessage {
     public static final int TYPE_USER = 0;
     public static final int TYPE_AI = 1;
-    public static final int TYPE_PROGRESS = 2;
     public static final int TYPE_SUGGESTIONS = 5;
 
     private int type;
     private String message; // For user/AI text messages
-    private String progressStatus; // For progress messages
-    private int progressValue; // For determinate progress (0-100)
     
     // New fields for Qwen features
     private String thinkingContent; // For thinking mode content
@@ -17,19 +14,10 @@ public class ChatMessage {
     private boolean hasThinking; // Flag to indicate if message has thinking
     private boolean hasWebSearch; // Flag to indicate if message has web search
 
-    // Simplified constructor
-    public ChatMessage(int type, String message, String progressStatus, int progressValue) {
-        this.type = type;
-        this.message = message;
-        this.progressStatus = progressStatus;
-        this.progressValue = progressValue;
-        this.hasThinking = false;
-        this.hasWebSearch = false;
-    }
-
     // Constructor for user and AI messages
     public ChatMessage(int type, String message) {
-        this(type, message, null, 0);
+        this.type = type;
+        this.message = message;
     }
 
     // Constructor for suggestion messages
@@ -51,21 +39,6 @@ public class ChatMessage {
         this.message = message;
     }
 
-    public String getProgressStatus() {
-        return progressStatus;
-    }
-
-    public void setProgressStatus(String progressStatus) {
-        this.progressStatus = progressStatus;
-    }
-
-    public int getProgressValue() {
-        return progressValue;
-    }
-
-    public void setProgressValue(int progressValue) {
-        this.progressValue = progressValue;
-    }
 
     // New getters and setters for thinking and web search
     public String getThinkingContent() {
