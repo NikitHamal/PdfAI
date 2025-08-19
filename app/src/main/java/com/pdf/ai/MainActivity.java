@@ -31,7 +31,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog;
 import android.widget.TextView;
 import com.pdf.ai.provider.LLMProvider;
 import com.pdf.ai.provider.ProviderFactory;
-import com.pdf.ai.util.MarkdownUtil;
+import com.pdf.ai.util.MarkdownParser;
 import com.pdf.ai.ui.interaction.OnOutlineActionListener;
 import com.pdf.ai.ui.interaction.OnSuggestionClickListener;
 
@@ -350,7 +350,7 @@ public class MainActivity extends AppCompatActivity implements
             @Override
             public void onSuccess(String sectionMarkdown) {
                 runOnUiThread(() -> {
-                    String cleanedContent = MarkdownUtil.clean(sectionMarkdown);
+                    String cleanedContent = MarkdownParser.normalize(sectionMarkdown);
                     currentPdfSectionsContent.add(cleanedContent);
                     executorService.execute(() -> generateSectionContent(outlineData, sectionIndex + 1));
                 });

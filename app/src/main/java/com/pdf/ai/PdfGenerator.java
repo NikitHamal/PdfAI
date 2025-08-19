@@ -107,9 +107,9 @@ public class PdfGenerator {
 
             Object[] blockResult;
             if (trimmedBlock.startsWith("[[TABLE")) {
-                blockResult = simulateVisualBlock(yPos, currentPageNum, 400); // Estimate for table
+                blockResult = simulateTableBlock(trimmedBlock, yPos, currentPageNum);
             } else if (trimmedBlock.startsWith("[[CHART")) {
-                blockResult = simulateVisualBlock(yPos, currentPageNum, 350); // Estimate for chart
+                blockResult = simulateVisualBlock(yPos, currentPageNum, 250); // Match drawChart chartHeight
             } else {
                 blockResult = simulateTextBlock(trimmedBlock, yPos, currentPageNum);
             }

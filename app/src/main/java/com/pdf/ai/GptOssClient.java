@@ -70,12 +70,17 @@ public class GptOssClient {
             body.put("op", "threads.create");
             body.put("params", params);
 
-            Request request = new Request.Builder()
+            Request.Builder builder = new Request.Builder()
                     .url(API_ENDPOINT)
                     .addHeader("accept", "text/event-stream")
                     .addHeader("x-selected-model", model)
-                    .addHeader("x-show-reasoning", "true")
-                    .addHeader("x-reasoning-effort", reasoningEffort == null ? "high" : reasoningEffort)
+                    .addHeader("x-show-reasoning", "false");
+
+            if (reasoningEffort != null && !reasoningEffort.isEmpty()) {
+                builder.addHeader("x-reasoning-effort", reasoningEffort);
+            }
+
+            Request request = builder
                     .post(RequestBody.create(body.toString(), MediaType.get("application/json; charset=utf-8")))
                     .build();
 

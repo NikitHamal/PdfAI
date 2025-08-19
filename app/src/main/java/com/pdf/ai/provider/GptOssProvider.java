@@ -25,7 +25,7 @@ public class GptOssProvider implements LLMProvider {
                 "Provide ONLY a valid JSON object with a 'title' string and a 'sections' array of objects with 'section_title' strings. " +
                 "Do not include any extra commentary or markdown. Topic: " + userPrompt;
 
-        client.generateText(model, outlinePrompt, "high", new GptOssClient.Callback() {
+        client.generateText(model, outlinePrompt, null, new GptOssClient.Callback() {
             @Override
             public void onSuccess(String text) {
                 try {
@@ -46,7 +46,7 @@ public class GptOssProvider implements LLMProvider {
     @Override
     public void generateSectionContent(String pdfTitle, String sectionTitle, List<String> allSections, int currentSectionIndex, SectionCallback callback) {
         String sectionPrompt = PromptBuilder.buildSectionPrompt(pdfTitle, sectionTitle, allSections, currentSectionIndex);
-        client.generateText(model, sectionPrompt, "high", new GptOssClient.Callback() {
+        client.generateText(model, sectionPrompt, null, new GptOssClient.Callback() {
             @Override
             public void onSuccess(String text) {
                 callback.onSuccess(text);
