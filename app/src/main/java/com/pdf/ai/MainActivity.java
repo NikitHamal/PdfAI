@@ -1,9 +1,6 @@
 package com.pdf.ai;
 
-import android.content.Context;
-import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -17,27 +14,24 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.widget.LinearLayout;
 import com.pdf.ai.ChatMessage;
 import com.pdf.ai.OutlineData;
-import com.pdf.ai.GeminiApiClient;
 import com.pdf.ai.PdfGenerator;
 import com.pdf.ai.DialogManager;
 import com.pdf.ai.PreferencesManager;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.File;
+ 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import android.content.Intent;
-import android.view.Menu;
-import android.view.MenuItem;
+ 
 
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import android.widget.TextView;
+import com.pdf.ai.provider.LLMProvider;
+import com.pdf.ai.provider.ProviderFactory;
+import com.pdf.ai.util.MarkdownUtil;
 
 public class MainActivity extends AppCompatActivity implements
         MessageAdapter.OnOutlineActionListener,
@@ -56,8 +50,7 @@ public class MainActivity extends AppCompatActivity implements
     private String selectedProvider = "Gemini"; // "Gemini" or "GPT-OSS"
 
     private PreferencesManager preferencesManager;
-    private GeminiApiClient geminiApiClient;
-    private GptOssClient gptOssClient;
+    private LLMProvider llmProvider;
     private PdfGenerator pdfGenerator;
     private DialogManager dialogManager;
 
@@ -74,14 +67,13 @@ public class MainActivity extends AppCompatActivity implements
         setContentView(R.layout.main);
 
         preferencesManager = new PreferencesManager(this);
-        geminiApiClient = new GeminiApiClient();
-        gptOssClient = new GptOssClient();
         pdfGenerator = new PdfGenerator(this);
         dialogManager = new DialogManager(this, preferencesManager);
 
         geminiApiKey = preferencesManager.getGeminiApiKey();
         selectedModel = preferencesManager.getSelectedModel();
         selectedProvider = preferencesManager.getSelectedProvider();
+        llmProvider = ProviderFactory.create(selectedProvider, selectedModel, geminiApiKey);
 
         chatRecyclerView = findViewById(R.id.chat_recycler_view);
         messageEditText = findViewById(R.id.message_edit_text);
@@ -141,6 +133,8 @@ public class MainActivity extends AppCompatActivity implements
     private void showApiKeyDialog() {
         dialogManager.showApiKeyDialog(apiKey -> {
             geminiApiKey = apiKey;
+            // Recreate provider in case user set API key after prompt
+            llmProvider = ProviderFactory.create(selectedProvider, selectedModel, geminiApiKey);
         });
     }
 
@@ -170,6 +164,7 @@ public class MainActivity extends AppCompatActivity implements
                 preferencesManager.setSelectedProvider(selectedProvider);
                 preferencesManager.setSelectedModel(selectedModel);
                 modelNameText.setText(selectedProvider + " • " + selectedModel);
+                llmProvider = ProviderFactory.create(selectedProvider, selectedModel, geminiApiKey);
                 bottomSheetDialog.dismiss();
             });
             geminiList.addView(tv);
@@ -190,6 +185,7 @@ public class MainActivity extends AppCompatActivity implements
                 preferencesManager.setSelectedProvider(selectedProvider);
                 preferencesManager.setSelectedModel(selectedModel);
                 modelNameText.setText(selectedProvider + " • " + selectedModel);
+                llmProvider = ProviderFactory.create(selectedProvider, selectedModel, geminiApiKey);
                 bottomSheetDialog.dismiss();
             });
             gptossList.addView(tv);
@@ -223,93 +219,31 @@ public class MainActivity extends AppCompatActivity implements
 
     private void startOutlineGeneration(String userPrompt) {
         showProgressMessage("Sending request...", 0);
-        callGeminiForOutline(userPrompt);
-    }
-
-    private void callGeminiForOutline(String userPrompt) {
-        if ("Gemini".equals(selectedProvider)) {
-            if (geminiApiKey == null || geminiApiKey.isEmpty()) {
-                Toast.makeText(this, "Gemini API Key is not set. Please set it in settings.", Toast.LENGTH_LONG).show();
-                updateProgressMessage("Error: API Key missing.", 0);
-                return;
-            }
-        }
-
-        if ("GPT-OSS".equals(selectedProvider)) {
-            String outlinePrompt = "Generate a detailed outline for a PDF document based on the following topic. " +
-                    "Provide ONLY a valid JSON object with a 'title' string and a 'sections' array of objects with 'section_title' strings. " +
-                    "Do not include any extra commentary or markdown. Topic: " + userPrompt;
-            gptOssClient.generateText(selectedModel, outlinePrompt, "high", new GptOssClient.Callback() {
-                @Override
-                public void onSuccess(String text) {
-                    runOnUiThread(() -> {
-                        try {
-                            String cleaned = cleanJson(text);
-                            JSONObject outlineJson = new JSONObject(cleaned);
-                            String pdfTitle = outlineJson.getString("title");
-                            JSONArray sectionsArray = outlineJson.getJSONArray("sections");
-                            List<String> sections = new ArrayList<>();
-                            for (int i = 0; i < sectionsArray.length(); i++) {
-                                sections.add(sectionsArray.getJSONObject(i).getString("section_title"));
-                            }
-                            currentOutlineData = new OutlineData(pdfTitle, sections);
-
-                            removeProgressMessage();
-                            showOutlineInChat(currentOutlineData);
-                        } catch (JSONException e) {
-                            updateProgressMessage("Failed to parse GPT-OSS outline: " + e.getMessage(), 0);
-                        }
-                    });
-                }
-
-                @Override
-                public void onFailure(String error) {
-                    runOnUiThread(() -> updateProgressMessage("GPT-OSS outline failed: " + error, 0));
-                }
-            });
+        if ("Gemini".equals(selectedProvider) && (geminiApiKey == null || geminiApiKey.isEmpty())) {
+            Toast.makeText(this, "Gemini API Key is not set. Please set it in settings.", Toast.LENGTH_LONG).show();
+            updateProgressMessage("Error: API Key missing.", 0);
             return;
         }
-
-        geminiApiClient.generateOutline(userPrompt, geminiApiKey, selectedModel, new GeminiApiClient.GeminiApiCallback() {
+        if (llmProvider == null) {
+            llmProvider = ProviderFactory.create(selectedProvider, selectedModel, geminiApiKey);
+        }
+        if (llmProvider == null) {
+            updateProgressMessage("Provider not configured.", 0);
+            return;
+        }
+        llmProvider.generateOutline(userPrompt, new LLMProvider.OutlineCallback() {
             @Override
-            public void onSuccess(String response) {
-                
+            public void onSuccess(OutlineData outlineData) {
                 runOnUiThread(() -> {
-                    try {
-                        JSONObject jsonResponse = new JSONObject(response);
-                        String outlineText = jsonResponse.getJSONArray("candidates")
-                                .getJSONObject(0)
-                                .getJSONObject("content")
-                                .getJSONArray("parts")
-                                .getJSONObject(0)
-                                .getString("text");
-
-                        String cleanedJson = cleanJson(outlineText);
-                        JSONObject outlineJson = new JSONObject(cleanedJson);
-                        String pdfTitle = outlineJson.getString("title");
-                        JSONArray sectionsArray = outlineJson.getJSONArray("sections");
-                        List<String> sections = new ArrayList<>();
-                        for (int i = 0; i < sectionsArray.length(); i++) {
-                            sections.add(sectionsArray.getJSONObject(i).getString("section_title"));
-                        }
-                        currentOutlineData = new OutlineData(pdfTitle, sections);
-
-                        removeProgressMessage();
-                        showOutlineInChat(currentOutlineData);
-                    } catch (JSONException e) {
-                        updateProgressMessage("Failed to parse outline: " + e.getMessage(), 0);
-                        Log.e("GeminiAPI", "Failed to parse outline JSON", e);
-                    }
+                    currentOutlineData = outlineData;
+                    removeProgressMessage();
+                    showOutlineInChat(currentOutlineData);
                 });
             }
 
             @Override
             public void onFailure(String error) {
-                
-                runOnUiThread(() -> {
-                    updateProgressMessage("Failed to generate outline: " + error, 0);
-                    Log.e("GeminiAPI", "Outline generation failed", new Exception(error));
-                });
+                runOnUiThread(() -> updateProgressMessage("Failed to generate outline: " + error, 0));
             }
         });
     }
@@ -401,58 +335,27 @@ public class MainActivity extends AppCompatActivity implements
 
         runOnUiThread(() -> updateProgressMessage("Writing content for: " + sectionTitle + " (" + progress + "%)", progress));
 
-        if ("GPT-OSS".equals(selectedProvider)) {
-            String sectionPrompt = buildSectionPrompt(outlineData.getPdfTitle(), sectionTitle, outlineData.getSections(), sectionIndex);
-            gptOssClient.generateText(selectedModel, sectionPrompt, "high", new GptOssClient.Callback() {
-                @Override
-                public void onSuccess(String text) {
-                    runOnUiThread(() -> {
-                        String cleanedContent = cleanMarkdown(text);
-                        currentPdfSectionsContent.add(cleanedContent);
-                        executorService.execute(() -> generateSectionContent(outlineData, sectionIndex + 1));
-                    });
-                }
-
-                @Override
-                public void onFailure(String error) {
-                    runOnUiThread(() -> {
-                        updateProgressMessage("Error generating content for " + sectionTitle + ": " + error, progress);
-                        isGeneratingPdf = false;
-                    });
-                }
-            });
-            return;
+        if (llmProvider == null) {
+            llmProvider = ProviderFactory.create(selectedProvider, selectedModel, geminiApiKey);
+            if (llmProvider == null) {
+                runOnUiThread(() -> updateProgressMessage("Provider not configured.", progress));
+                isGeneratingPdf = false;
+                return;
+            }
         }
 
-        geminiApiClient.generateSectionContent(outlineData.getPdfTitle(), sectionTitle, outlineData.getSections(), sectionIndex, geminiApiKey, selectedModel, new GeminiApiClient.GeminiApiCallback() {
+        llmProvider.generateSectionContent(outlineData.getPdfTitle(), sectionTitle, outlineData.getSections(), sectionIndex, new LLMProvider.SectionCallback() {
             @Override
-            public void onSuccess(String response) {
-                
+            public void onSuccess(String sectionMarkdown) {
                 runOnUiThread(() -> {
-                    try {
-                        JSONObject jsonResponse = new JSONObject(response);
-                        String sectionContent = jsonResponse.getJSONArray("candidates")
-                                .getJSONObject(0)
-                                .getJSONObject("content")
-                                .getJSONArray("parts")
-                                .getJSONObject(0)
-                                .getString("text");
-                        
-                        // FIX: Clean the markdown content before adding it to the list
-                        String cleanedContent = cleanMarkdown(sectionContent);
-                        currentPdfSectionsContent.add(cleanedContent);
-                        
-                        executorService.execute(() -> generateSectionContent(outlineData, sectionIndex + 1));
-                    } catch (JSONException e) {
-                        updateProgressMessage("Failed to parse Gemini response for section content: " + e.getMessage(), progress);
-                        isGeneratingPdf = false;
-                    }
+                    String cleanedContent = MarkdownUtil.clean(sectionMarkdown);
+                    currentPdfSectionsContent.add(cleanedContent);
+                    executorService.execute(() -> generateSectionContent(outlineData, sectionIndex + 1));
                 });
             }
 
             @Override
             public void onFailure(String error) {
-                
                 runOnUiThread(() -> {
                     updateProgressMessage("Error generating content for " + sectionTitle + ": " + error, progress);
                     isGeneratingPdf = false;
@@ -482,59 +385,7 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
-    private String cleanJson(String jsonString) {
-        if (jsonString.startsWith("```json")) {
-            jsonString = jsonString.substring(7);
-        }
-        if (jsonString.endsWith("```")) {
-            jsonString = jsonString.substring(0, jsonString.length() - 3);
-        }
-        return jsonString.trim();
-    }
-
-    // FIX: Added a new method to clean markdown content specifically.
-    private String cleanMarkdown(String markdownString) {
-        if (markdownString == null) return "";
-        
-        // Remove markdown code block delimiters (e.g., ```markdown ... ```)
-        if (markdownString.trim().startsWith("```markdown")) {
-            markdownString = markdownString.trim().substring(11);
-        } else if (markdownString.trim().startsWith("```")) {
-            markdownString = markdownString.trim().substring(3);
-        }
-        
-        if (markdownString.trim().endsWith("```")) {
-            markdownString = markdownString.trim().substring(0, markdownString.trim().length() - 3);
-        }
-        
-        return markdownString.trim();
-    }
-
-    private String buildSectionPrompt(String pdfTitle, String sectionTitle, List<String> allSections, int currentSectionIndex) {
-        StringBuilder promptBuilder = new StringBuilder();
-        promptBuilder.append("Generate detailed and professionally formatted content for a PDF document. ");
-        promptBuilder.append("The overall PDF title is: \"").append(pdfTitle).append("\". ");
-        promptBuilder.append("You are currently writing the section titled: \"").append(sectionTitle).append("\". ");
-        promptBuilder.append("The complete outline of the PDF is:\n");
-        for (int i = 0; i < allSections.size(); i++) {
-            promptBuilder.append(i + 1).append(". ").append(allSections.get(i));
-            if (i == currentSectionIndex) {
-                promptBuilder.append(" (Current Section)");
-            }
-            promptBuilder.append("\n");
-        }
-        promptBuilder.append("Provide the content for the section \"").append(sectionTitle).append("\" only. ");
-        promptBuilder.append("Format the content using standard Markdown. This includes headings (#, ##), lists (* or 1.), bold (**text**), and italic (*text*). Do not wrap the response in code fences.");
-        promptBuilder.append("\n\nIMPORTANT: You can also include data visualizations. If, and ONLY IF, a table or chart would significantly clarify the content, you can include it using one of the following special formats. Do NOT use them for decoration or for simple lists.\n");
-        promptBuilder.append("For tables: [[TABLE|Table Title|Column1,Column2,Column3|Row1Val1,Row1Val2,Row1Val3|Row2Val1,Row2Val2,Row2Val3]]\n");
-        promptBuilder.append("For bar charts: [[CHART|bar|Chart Title|X-Axis Label 1,X-Axis Label 2|Value1,Value2]]\n");
-        promptBuilder.append("For pie charts: [[CHART|pie|Chart Title|Slice Label 1,Slice Label 2,Slice Label 3|Value1,Value2,Value3]]\n");
-        promptBuilder.append("For line charts: [[CHART|line|Chart Title|X-Axis Label,Y-Axis Label|X-Val1,X-Val2,X-Val3|Y-Val1,Y-Val2,Y-Val3]]\n");
-        promptBuilder.append("For scatter plots: [[CHART|scatter|Chart Title|X-Axis Label,Y-Axis Label|X1,Y1|X2,Y2|X3,Y3]]\n");
-        promptBuilder.append("For combined bar-line charts: [[CHART|bar-line|Title|X-Axis Label,Y-Axis Label (Bar),Y-Axis Label (Line)|Cat1,Cat2|BarVal1,BarVal2|LineVal1,LineVal2]]\n");
-        promptBuilder.append("Again, only use these special formats when they are the best way to present complex data. Otherwise, stick to standard Markdown text.");
-        return promptBuilder.toString();
-    }
+    
 
     @Override
     public void onSuggestionClick(String prompt) {
