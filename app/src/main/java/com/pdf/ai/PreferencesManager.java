@@ -19,6 +19,7 @@ public class PreferencesManager {
     private static final String API_KEY_KEY = "geminiApiKey";
     private static final String CHAT_HISTORY_KEY = "chatHistory";
     private static final String KEY_SELECTED_MODEL = "selectedModel";
+    private static final String KEY_SELECTED_PROVIDER = "selectedProvider"; // e.g., "Gemini" or "GPT-OSS"
 
     private SharedPreferences sharedPreferences;
 
@@ -39,7 +40,15 @@ public class PreferencesManager {
     }
 
     public String getSelectedModel() {
-        return sharedPreferences.getString(KEY_SELECTED_MODEL, "gemini-1.5-flash-latest");
+        return sharedPreferences.getString(KEY_SELECTED_MODEL, "gemini-2.5-flash");
+    }
+
+    public void setSelectedProvider(String provider) {
+        sharedPreferences.edit().putString(KEY_SELECTED_PROVIDER, provider).apply();
+    }
+
+    public String getSelectedProvider() {
+        return sharedPreferences.getString(KEY_SELECTED_PROVIDER, "Gemini");
     }
 
     public void saveChatHistory(List<ChatMessage> chatMessages) {

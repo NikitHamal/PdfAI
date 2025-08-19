@@ -52,10 +52,12 @@ public class MainActivity extends AppCompatActivity implements
     private TextView modelNameText;
 
     private String geminiApiKey;
-    private String selectedModel = "gemini-1.5-flash-latest"; // Default model
+    private String selectedModel = "gemini-2.5-flash"; // Default model (Gemini 2.x)
+    private String selectedProvider = "Gemini"; // "Gemini" or "GPT-OSS"
 
     private PreferencesManager preferencesManager;
     private GeminiApiClient geminiApiClient;
+    private GptOssClient gptOssClient;
     private PdfGenerator pdfGenerator;
     private DialogManager dialogManager;
 
@@ -73,11 +75,13 @@ public class MainActivity extends AppCompatActivity implements
 
         preferencesManager = new PreferencesManager(this);
         geminiApiClient = new GeminiApiClient();
+        gptOssClient = new GptOssClient();
         pdfGenerator = new PdfGenerator(this);
         dialogManager = new DialogManager(this, preferencesManager);
 
         geminiApiKey = preferencesManager.getGeminiApiKey();
         selectedModel = preferencesManager.getSelectedModel();
+        selectedProvider = preferencesManager.getSelectedProvider();
 
         chatRecyclerView = findViewById(R.id.chat_recycler_view);
         messageEditText = findViewById(R.id.message_edit_text);
@@ -86,7 +90,7 @@ public class MainActivity extends AppCompatActivity implements
         modelNameText = findViewById(R.id.model_name_text);
         LinearLayout modelPickerLayout = findViewById(R.id.model_picker_layout);
 
-        modelNameText.setText(selectedModel);
+        modelNameText.setText(selectedProvider + " • " + selectedModel);
 
         chatMessages = new ArrayList<>();
         messageAdapter = new MessageAdapter(this, chatMessages, this, this);
@@ -109,8 +113,10 @@ public class MainActivity extends AppCompatActivity implements
         settingsIcon.setOnClickListener(v -> startActivity(new Intent(this, SettingsActivity.class)));
         modelPickerLayout.setOnClickListener(v -> showModelPicker());
 
-        if (geminiApiKey == null || geminiApiKey.isEmpty()) {
-            showApiKeyDialog();
+        if ("Gemini".equals(selectedProvider)) {
+            if (geminiApiKey == null || geminiApiKey.isEmpty()) {
+                showApiKeyDialog();
+            }
         }
 
         // Initialize the ExecutorService
@@ -143,29 +149,50 @@ public class MainActivity extends AppCompatActivity implements
         View bottomSheetView = getLayoutInflater().inflate(R.layout.model_picker_sheet, null);
         bottomSheetDialog.setContentView(bottomSheetView);
 
-        LinearLayout modelList = bottomSheetView.findViewById(R.id.model_list);
-        String[] models = {
-                "gemini-1.5-flash-latest",
-                "gemini-1.5-pro-latest",
-                "gemini-2.5-flash-lite-preview-06-17",
+        LinearLayout geminiList = bottomSheetView.findViewById(R.id.gemini_list);
+        LinearLayout gptossList = bottomSheetView.findViewById(R.id.gptoss_list);
+
+        String[] geminiModels = new String[] {
                 "gemini-2.5-flash",
                 "gemini-2.5-pro",
                 "gemini-2.0-flash",
                 "gemini-2.0-flash-lite"
         };
 
-        for (String model : models) {
-            TextView textView = new TextView(this);
-            textView.setText(model);
-            textView.setTextSize(14);
-            textView.setPadding(40, 20, 40, 20);
-            textView.setOnClickListener(v -> {
+        for (String model : geminiModels) {
+            TextView tv = new TextView(this);
+            tv.setText("Gemini • " + model);
+            tv.setTextSize(14);
+            tv.setPadding(40, 20, 40, 20);
+            tv.setOnClickListener(v -> {
+                selectedProvider = "Gemini";
                 selectedModel = model;
-                modelNameText.setText(selectedModel);
+                preferencesManager.setSelectedProvider(selectedProvider);
                 preferencesManager.setSelectedModel(selectedModel);
+                modelNameText.setText(selectedProvider + " • " + selectedModel);
                 bottomSheetDialog.dismiss();
             });
-            modelList.addView(textView);
+            geminiList.addView(tv);
+        }
+
+        String[] gptOssModels = new String[] {
+                "gpt-oss-120b",
+                "gpt-oss-20b"
+        };
+        for (String model : gptOssModels) {
+            TextView tv = new TextView(this);
+            tv.setText("GPT-OSS • " + model + " (Free)");
+            tv.setTextSize(14);
+            tv.setPadding(40, 20, 40, 20);
+            tv.setOnClickListener(v -> {
+                selectedProvider = "GPT-OSS";
+                selectedModel = model;
+                preferencesManager.setSelectedProvider(selectedProvider);
+                preferencesManager.setSelectedModel(selectedModel);
+                modelNameText.setText(selectedProvider + " • " + selectedModel);
+                bottomSheetDialog.dismiss();
+            });
+            gptossList.addView(tv);
         }
 
         bottomSheetDialog.show();
@@ -200,9 +227,46 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private void callGeminiForOutline(String userPrompt) {
-        if (geminiApiKey == null || geminiApiKey.isEmpty()) {
-            Toast.makeText(this, "Gemini API Key is not set. Please set it in settings.", Toast.LENGTH_LONG).show();
-            updateProgressMessage("Error: API Key missing.", 0);
+        if ("Gemini".equals(selectedProvider)) {
+            if (geminiApiKey == null || geminiApiKey.isEmpty()) {
+                Toast.makeText(this, "Gemini API Key is not set. Please set it in settings.", Toast.LENGTH_LONG).show();
+                updateProgressMessage("Error: API Key missing.", 0);
+                return;
+            }
+        }
+
+        if ("GPT-OSS".equals(selectedProvider)) {
+            String outlinePrompt = "Generate a detailed outline for a PDF document based on the following topic. " +
+                    "Provide ONLY a valid JSON object with a 'title' string and a 'sections' array of objects with 'section_title' strings. " +
+                    "Do not include any extra commentary or markdown. Topic: " + userPrompt;
+            gptOssClient.generateText(selectedModel, outlinePrompt, "high", new GptOssClient.Callback() {
+                @Override
+                public void onSuccess(String text) {
+                    runOnUiThread(() -> {
+                        try {
+                            String cleaned = cleanJson(text);
+                            JSONObject outlineJson = new JSONObject(cleaned);
+                            String pdfTitle = outlineJson.getString("title");
+                            JSONArray sectionsArray = outlineJson.getJSONArray("sections");
+                            List<String> sections = new ArrayList<>();
+                            for (int i = 0; i < sectionsArray.length(); i++) {
+                                sections.add(sectionsArray.getJSONObject(i).getString("section_title"));
+                            }
+                            currentOutlineData = new OutlineData(pdfTitle, sections);
+
+                            removeProgressMessage();
+                            showOutlineInChat(currentOutlineData);
+                        } catch (JSONException e) {
+                            updateProgressMessage("Failed to parse GPT-OSS outline: " + e.getMessage(), 0);
+                        }
+                    });
+                }
+
+                @Override
+                public void onFailure(String error) {
+                    runOnUiThread(() -> updateProgressMessage("GPT-OSS outline failed: " + error, 0));
+                }
+            });
             return;
         }
 
@@ -336,6 +400,29 @@ public class MainActivity extends AppCompatActivity implements
         int progress = (int) (((float) sectionIndex / totalSections) * 100);
 
         runOnUiThread(() -> updateProgressMessage("Writing content for: " + sectionTitle + " (" + progress + "%)", progress));
+
+        if ("GPT-OSS".equals(selectedProvider)) {
+            String sectionPrompt = buildSectionPrompt(outlineData.getPdfTitle(), sectionTitle, outlineData.getSections(), sectionIndex);
+            gptOssClient.generateText(selectedModel, sectionPrompt, "high", new GptOssClient.Callback() {
+                @Override
+                public void onSuccess(String text) {
+                    runOnUiThread(() -> {
+                        String cleanedContent = cleanMarkdown(text);
+                        currentPdfSectionsContent.add(cleanedContent);
+                        executorService.execute(() -> generateSectionContent(outlineData, sectionIndex + 1));
+                    });
+                }
+
+                @Override
+                public void onFailure(String error) {
+                    runOnUiThread(() -> {
+                        updateProgressMessage("Error generating content for " + sectionTitle + ": " + error, progress);
+                        isGeneratingPdf = false;
+                    });
+                }
+            });
+            return;
+        }
 
         geminiApiClient.generateSectionContent(outlineData.getPdfTitle(), sectionTitle, outlineData.getSections(), sectionIndex, geminiApiKey, selectedModel, new GeminiApiClient.GeminiApiCallback() {
             @Override
