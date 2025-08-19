@@ -273,8 +273,9 @@ public class MainActivity extends AppCompatActivity implements
         if (!chatMessages.isEmpty()) {
             ChatMessage lastMessage = chatMessages.get(chatMessages.size() - 1);
             if (lastMessage.getType() == ChatMessage.TYPE_PROGRESS) {
-                chatMessages.remove(chatMessages.size() - 1);
-                messageAdapter.notifyItemRemoved(chatMessages.size() - 1);
+                int removeIndex = chatMessages.size() - 1;
+                chatMessages.remove(removeIndex);
+                messageAdapter.notifyItemRemoved(removeIndex);
             }
         }
     }
