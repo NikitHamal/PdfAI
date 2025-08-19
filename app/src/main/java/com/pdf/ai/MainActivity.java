@@ -32,10 +32,12 @@ import android.widget.TextView;
 import com.pdf.ai.provider.LLMProvider;
 import com.pdf.ai.provider.ProviderFactory;
 import com.pdf.ai.util.MarkdownUtil;
+import com.pdf.ai.ui.interaction.OnOutlineActionListener;
+import com.pdf.ai.ui.interaction.OnSuggestionClickListener;
 
 public class MainActivity extends AppCompatActivity implements
-        MessageAdapter.OnOutlineActionListener,
-        MessageAdapter.OnSuggestionClickListener {
+        OnOutlineActionListener,
+        OnSuggestionClickListener {
 
     private RecyclerView chatRecyclerView;
     private MessageAdapter messageAdapter;
