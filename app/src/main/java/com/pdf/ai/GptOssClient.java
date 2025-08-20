@@ -48,8 +48,11 @@ public class GptOssClient {
     public GptOssClient() {
         client = new OkHttpClient.Builder()
                 .connectTimeout(60, TimeUnit.SECONDS)
-                .readTimeout(60, TimeUnit.SECONDS)
-                .writeTimeout(60, TimeUnit.SECONDS)
+                // SSE streams can be long-lived; disable read/call timeout
+                .readTimeout(0, TimeUnit.SECONDS)
+                .writeTimeout(240, TimeUnit.SECONDS)
+                .callTimeout(0, TimeUnit.SECONDS)
+                .retryOnConnectionFailure(true)
                 .build();
     }
 

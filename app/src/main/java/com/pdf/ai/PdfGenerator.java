@@ -124,7 +124,7 @@ public class PdfGenerator {
      */
     private Object[] simulateSectionTitle(String title, float yPos, int currentPageNum) {
         Paint paint = paintManager.getSectionTitlePaint();
-        List<String> lines = ContentDrawer.splitTextIntoLines(title, paint, PaintManager.CONTENT_WIDTH);
+        List<String> lines = DrawUtils.splitTextIntoLines(title, paint, PaintManager.CONTENT_WIDTH);
         for (String line : lines) {
             float lineHeight = paint.descent() - paint.ascent();
             if (yPos + lineHeight > PaintManager.PAGE_HEIGHT - PaintManager.MARGIN) {
@@ -161,7 +161,7 @@ public class PdfGenerator {
                 effectiveContentWidth -= PaintManager.LIST_ITEM_INDENT;
             }
 
-            List<String> wrappedLines = ContentDrawer.splitTextIntoLines(line, paintForBlock, effectiveContentWidth);
+            List<String> wrappedLines = DrawUtils.splitTextIntoLines(line, paintForBlock, effectiveContentWidth);
             for (String wrappedLine : wrappedLines) {
                 float lineHeight = paintForBlock.descent() - paintForBlock.ascent();
                 if (yPos + lineHeight > PaintManager.PAGE_HEIGHT - PaintManager.MARGIN) {
@@ -222,7 +222,7 @@ public class PdfGenerator {
             float titleLineHeight = (paintManager.getChartTitlePaint().descent() - paintManager.getChartTitlePaint().ascent())
                     * PaintManager.LINE_HEIGHT_MULTIPLIER;
             // Title may wrap; approximate using splitTextIntoLines for accuracy
-            List<String> titleLines = ContentDrawer.splitTextIntoLines(title, paintManager.getChartTitlePaint(), PaintManager.CONTENT_WIDTH);
+            List<String> titleLines = DrawUtils.splitTextIntoLines(title, paintManager.getChartTitlePaint(), PaintManager.CONTENT_WIDTH);
             if (titleLines.isEmpty()) {
                 yPos += titleLineHeight; // fallback at least one line
             } else {
@@ -243,7 +243,7 @@ public class PdfGenerator {
                 for (int c = 0; c < numCols; c++) {
                     float colWidth = colWidths[c] - (2 * cellPadding);
                     String cell = (c < rowData.length) ? rowData[c].trim() : "";
-                    List<String> wrapped = ContentDrawer.splitTextIntoLines(cell, textPaint, Math.max(0, colWidth));
+                    List<String> wrapped = DrawUtils.splitTextIntoLines(cell, textPaint, Math.max(0, colWidth));
                     float lineHeight = (textPaint.descent() - textPaint.ascent()) * PaintManager.LINE_HEIGHT_MULTIPLIER;
                     float textHeight = wrapped.isEmpty() ? lineHeight : wrapped.size() * lineHeight;
                     if (textHeight > maxTextHeight) maxTextHeight = textHeight;
@@ -301,7 +301,7 @@ public class PdfGenerator {
         float centerY = PaintManager.PAGE_HEIGHT / 2f;
         float maxWidth = PaintManager.CONTENT_WIDTH - 80;
 
-        List<String> titleLines = ContentDrawer.splitTextIntoLines(title, titlePaint, maxWidth);
+        List<String> titleLines = DrawUtils.splitTextIntoLines(title, titlePaint, maxWidth);
 
         float lineHeight = (titlePaint.descent() - titlePaint.ascent());
         float totalHeight = (titleLines.size() * lineHeight * PaintManager.LINE_HEIGHT_MULTIPLIER) - (lineHeight * (PaintManager.LINE_HEIGHT_MULTIPLIER - 1.0f));
@@ -340,7 +340,7 @@ public class PdfGenerator {
             float numWidth = numPaint.measureText(pageNumStr);
             float availableWidth = rightMargin - PaintManager.MARGIN - numWidth - 20;
 
-            String truncatedTitle = ContentDrawer.truncateText(item.getTitle(), textPaint, availableWidth);
+            String truncatedTitle = DrawUtils.truncateText(item.getTitle(), textPaint, availableWidth);
             canvas.drawText(truncatedTitle, PaintManager.MARGIN, yPosition, textPaint);
             canvas.drawText(pageNumStr, rightMargin, yPosition, numPaint);
 
@@ -348,7 +348,7 @@ public class PdfGenerator {
             float startX = PaintManager.MARGIN + titleWidth + 5;
             float endX = rightMargin - numWidth - 5;
             if (startX < endX) {
-                canvas.drawPath(ContentDrawer.createDottedLinePath(startX, endX, yPosition - (lineHeight / 4)), paintManager.getDottedLinePaint());
+                canvas.drawPath(DrawUtils.createDottedLinePath(startX, endX, yPosition - (lineHeight / 4)), paintManager.getDottedLinePaint());
             }
 
             yPosition += lineHeight * 2.0f;
@@ -362,7 +362,7 @@ public class PdfGenerator {
 
         for (int i = 0; i < outlineData.getSections().size(); i++) {
             if (currentPage != null) {
-                contentDrawer.drawPageNumber(currentPage.getCanvas(), currentPage.getInfo().getPageNumber());
+                PageHelper.drawPageNumber(currentPage.getCanvas(), currentPage.getInfo().getPageNumber(), paintManager);
                 document.finishPage(currentPage);
             }
 
@@ -382,7 +382,7 @@ public class PdfGenerator {
         }
 
         if (currentPage != null) {
-            contentDrawer.drawPageNumber(currentPage.getCanvas(), currentPage.getInfo().getPageNumber());
+            PageHelper.drawPageNumber(currentPage.getCanvas(), currentPage.getInfo().getPageNumber(), paintManager);
             document.finishPage(currentPage);
         }
     }
