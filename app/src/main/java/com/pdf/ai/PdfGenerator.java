@@ -18,6 +18,9 @@ public class PdfGenerator {
 
     private final Context context;
     private final PaintManager paintManager;
+    private final TextRenderer textRenderer;
+    private final TableRenderer tableRenderer;
+    private final ChartRenderer chartRenderer;
     private final List<TocItem> tocItems = new ArrayList<>();
 
     public interface PdfGenerationCallback {
@@ -28,6 +31,9 @@ public class PdfGenerator {
     public PdfGenerator(Context context) {
         this.context = context;
         this.paintManager = new PaintManager(context);
+        this.textRenderer = new TextRenderer(paintManager);
+        this.tableRenderer = new TableRenderer(paintManager);
+        this.chartRenderer = new ChartRenderer(paintManager);
     }
 
     public void createPdf(String pdfTitle, OutlineData outlineData, List<String> sectionsContent, PdfGenerationCallback callback) {
@@ -57,11 +63,6 @@ public class PdfGenerator {
         }
     }
 
-    /**
-     * FIX: This method has been completely rewritten to more accurately simulate the layout
-     * process, ensuring page numbers in the Table of Contents are correct. It now mirrors
-     * the actual drawing logic from ContentDrawer.
-     */
     private void simulateLayoutAndBuildToc(OutlineData outlineData, List<String> sectionsContent) {
         tocItems.clear();
         int physicalPageNum = 3; // Content starts on physical page 3
@@ -70,36 +71,27 @@ public class PdfGenerator {
             String sectionTitle = outlineData.getSections().get(i);
             String sectionContent = sectionsContent.get(i);
 
-            // The drawing logic starts each section on a new page. The simulation must do the same.
             if (i > 0) {
                 physicalPageNum++;
             }
 
-            // Add TOC item for the start of the section. The logical page number is physical page - 2.
             tocItems.add(new TocItem(sectionTitle, physicalPageNum - 2, PaintManager.MARGIN));
 
-            // Simulate drawing this section to find out how many pages it spans
             Object[] simResult = simulateSection(sectionTitle, sectionContent, PaintManager.MARGIN, physicalPageNum);
-            physicalPageNum = (int) simResult[1]; // Update page number to the last page the section occupied
+            physicalPageNum = (int) simResult[1];
         }
     }
 
-    /**
-     * NEW: Simulates the layout of a full section to predict page breaks accurately.
-     */
     private Object[] simulateSection(String sectionTitle, String sectionContent, float yPos, int currentPageNum) {
-        // 1. Simulate Section Title
-        Object[] titleResult = simulateSectionTitle(sectionTitle, yPos, currentPageNum);
+        Object[] titleResult = textRenderer.simulateSectionTitle(sectionTitle, yPos, currentPageNum);
         yPos = (float) titleResult[0];
         currentPageNum = (int) titleResult[1];
 
-        // 2. Simulate Content Blocks
         String[] contentBlocks = sectionContent.split("\n\\s*\n");
         for (String block : contentBlocks) {
             String trimmedBlock = block.trim();
             if (trimmedBlock.isEmpty()) continue;
 
-            // Avoid re-drawing the title if it's also in the content
             if (trimmedBlock.equals(sectionTitle) ||
                     trimmedBlock.startsWith("#") && trimmedBlock.substring(trimmedBlock.indexOf(" ") + 1).equals(sectionTitle)) {
                 continue;
@@ -107,187 +99,16 @@ public class PdfGenerator {
 
             Object[] blockResult;
             if (trimmedBlock.startsWith("[[TABLE")) {
-                blockResult = simulateTableBlock(trimmedBlock, yPos, currentPageNum);
+                blockResult = tableRenderer.simulateTableBlock(trimmedBlock, yPos, currentPageNum);
             } else if (trimmedBlock.startsWith("[[CHART")) {
-                blockResult = simulateVisualBlock(yPos, currentPageNum, 250); // Match drawChart chartHeight
+                blockResult = chartRenderer.simulateVisualBlock(yPos, currentPageNum, 250);
             } else {
-                blockResult = simulateTextBlock(trimmedBlock, yPos, currentPageNum);
+                blockResult = textRenderer.simulateTextBlock(trimmedBlock, yPos, currentPageNum);
             }
             yPos = (float) blockResult[0];
             currentPageNum = (int) blockResult[1];
         }
         return new Object[]{yPos, currentPageNum};
-    }
-
-    /**
-     * NEW: Simulates the layout of a section title.
-     */
-    private Object[] simulateSectionTitle(String title, float yPos, int currentPageNum) {
-        Paint paint = paintManager.getSectionTitlePaint();
-        List<String> lines = DrawUtils.splitTextIntoLines(title, paint, PaintManager.CONTENT_WIDTH);
-        for (String line : lines) {
-            float lineHeight = paint.descent() - paint.ascent();
-            if (yPos + lineHeight > PaintManager.PAGE_HEIGHT - PaintManager.MARGIN) {
-                currentPageNum++;
-                yPos = PaintManager.MARGIN;
-            }
-            yPos += lineHeight * PaintManager.LINE_HEIGHT_MULTIPLIER;
-        }
-        yPos += PaintManager.SECTION_TITLE_BOTTOM_MARGIN;
-        return new Object[]{yPos, currentPageNum};
-    }
-
-    /**
-     * NEW: Simulates the layout of a standard text block, including headings and lists.
-     */
-    private Object[] simulateTextBlock(String text, float yPos, int currentPageNum) {
-        Paint paintForBlock;
-        boolean isHeading = false;
-        if (text.startsWith("###")) { paintForBlock = paintManager.getH3Paint(); text = text.substring(3).trim(); isHeading = true; }
-        else if (text.startsWith("##")) { paintForBlock = paintManager.getH2Paint(); text = text.substring(2).trim(); isHeading = true; }
-        else if (text.startsWith("#")) { paintForBlock = paintManager.getH1Paint(); text = text.substring(1).trim(); isHeading = true; }
-        else { paintForBlock = paintManager.getTextPaint(); }
-
-        yPos += isHeading ? PaintManager.HEADING_TOP_MARGIN : 0;
-
-        String[] linesInBlock = text.split("\n");
-        for (String line : linesInBlock) {
-            if (line.trim().isEmpty()) continue;
-
-            float effectiveContentWidth = PaintManager.CONTENT_WIDTH;
-            Pattern bulletPattern = Pattern.compile("^[*-]\\s(.+)");
-            Pattern numListPattern = Pattern.compile("^(\\d+)\\.\\s(.+)");
-            if (bulletPattern.matcher(line.trim()).matches() || numListPattern.matcher(line.trim()).matches()) {
-                effectiveContentWidth -= PaintManager.LIST_ITEM_INDENT;
-            }
-
-            List<String> wrappedLines = DrawUtils.splitTextIntoLines(line, paintForBlock, effectiveContentWidth);
-            for (String wrappedLine : wrappedLines) {
-                float lineHeight = paintForBlock.descent() - paintForBlock.ascent();
-                if (yPos + lineHeight > PaintManager.PAGE_HEIGHT - PaintManager.MARGIN) {
-                    currentPageNum++;
-                    yPos = PaintManager.MARGIN;
-                }
-                yPos += lineHeight * PaintManager.LINE_HEIGHT_MULTIPLIER;
-            }
-        }
-        yPos += PaintManager.PARAGRAPH_SPACING;
-        return new Object[]{yPos, currentPageNum};
-    }
-
-    /**
-     * NEW: Simulates the layout of a fixed-height visual block like a chart or table.
-     */
-    private Object[] simulateVisualBlock(float yPos, int currentPageNum, float height) {
-        float titleHeight = (paintManager.getChartTitlePaint().descent() - paintManager.getChartTitlePaint().ascent()) * PaintManager.LINE_HEIGHT_MULTIPLIER;
-        float totalHeight = PaintManager.VISUAL_TITLE_MARGIN + titleHeight + height + PaintManager.VISUAL_BOTTOM_MARGIN;
-
-        if (yPos + totalHeight > PaintManager.PAGE_HEIGHT - PaintManager.MARGIN) {
-            currentPageNum++;
-            yPos = PaintManager.MARGIN;
-        }
-        yPos += totalHeight;
-        return new Object[]{yPos, currentPageNum};
-    }
-
-    /**
-     * NEW: Simulates the layout of a table block, including title, header, rows, page breaks, and
-     * repeating the header on new pages. Mirrors logic from ContentDrawer.drawTable/drawRow.
-     */
-    private Object[] simulateTableBlock(String tableString, float yPos, int currentPageNum) {
-        try {
-            // Parse the table description
-            String raw = tableString.replace("[[TABLE|", "").replace("]]", "");
-            String[] parts = raw.split("\\|");
-            if (parts.length < 3) {
-                // If format is invalid, assume small placeholder height
-                return simulateVisualBlock(yPos, currentPageNum, 100);
-            }
-
-            String title = parts[0].trim();
-            String[] headers = parts[1].split(",");
-            List<String[]> rows = new ArrayList<>();
-            for (int i = 2; i < parts.length; i++) {
-                rows.add(parts[i].split(","));
-            }
-
-            // Before drawing the title, ContentDrawer ensures there is some minimum space (60)
-            if (yPos + 60 > PaintManager.PAGE_HEIGHT - PaintManager.MARGIN) {
-                currentPageNum++;
-                yPos = PaintManager.MARGIN;
-            }
-
-            // Title area
-            yPos += PaintManager.VISUAL_TITLE_MARGIN;
-            float titleLineHeight = (paintManager.getChartTitlePaint().descent() - paintManager.getChartTitlePaint().ascent())
-                    * PaintManager.LINE_HEIGHT_MULTIPLIER;
-            // Title may wrap; approximate using splitTextIntoLines for accuracy
-            List<String> titleLines = DrawUtils.splitTextIntoLines(title, paintManager.getChartTitlePaint(), PaintManager.CONTENT_WIDTH);
-            if (titleLines.isEmpty()) {
-                yPos += titleLineHeight; // fallback at least one line
-            } else {
-                yPos += titleLines.size() * titleLineHeight;
-            }
-
-            // Column widths: equal distribution as in ContentDrawer.calculateColumnWidths
-            int numCols = Math.max(1, headers.length);
-            float[] colWidths = new float[numCols];
-            for (int i = 0; i < numCols; i++) {
-                colWidths[i] = PaintManager.CONTENT_WIDTH / numCols;
-            }
-
-            // Helper to compute row height given data and paint
-            java.util.function.BiFunction<String[], Paint, Float> computeRowHeight = (rowData, textPaint) -> {
-                float cellPadding = PaintManager.CELL_PADDING;
-                float maxTextHeight = 0f;
-                for (int c = 0; c < numCols; c++) {
-                    float colWidth = colWidths[c] - (2 * cellPadding);
-                    String cell = (c < rowData.length) ? rowData[c].trim() : "";
-                    List<String> wrapped = DrawUtils.splitTextIntoLines(cell, textPaint, Math.max(0, colWidth));
-                    float lineHeight = (textPaint.descent() - textPaint.ascent()) * PaintManager.LINE_HEIGHT_MULTIPLIER;
-                    float textHeight = wrapped.isEmpty() ? lineHeight : wrapped.size() * lineHeight;
-                    if (textHeight > maxTextHeight) maxTextHeight = textHeight;
-                }
-                return maxTextHeight + (2 * cellPadding);
-            };
-
-            // Header row
-            Paint headerPaint = paintManager.getTableHeaderPaint();
-            float headerRowHeight = computeRowHeight.apply(headers, headerPaint);
-            if (yPos + headerRowHeight > PaintManager.PAGE_HEIGHT - PaintManager.MARGIN) {
-                currentPageNum++;
-                yPos = PaintManager.MARGIN;
-            }
-            yPos += headerRowHeight;
-
-            // Data rows
-            Paint cellPaint = paintManager.getTableCellPaint();
-            for (String[] row : rows) {
-                float rowHeight = computeRowHeight.apply(row, cellPaint);
-                if (yPos + rowHeight > PaintManager.PAGE_HEIGHT - PaintManager.MARGIN) {
-                    // New page and repeat header
-                    currentPageNum++;
-                    yPos = PaintManager.MARGIN;
-
-                    // Ensure header fits on the new page
-                    if (yPos + headerRowHeight > PaintManager.PAGE_HEIGHT - PaintManager.MARGIN) {
-                        // Extreme case: if even header doesn't fit, start another page
-                        currentPageNum++;
-                        yPos = PaintManager.MARGIN;
-                    }
-                    yPos += headerRowHeight;
-                }
-                yPos += rowHeight;
-            }
-
-            // Bottom margin after the table
-            yPos += PaintManager.VISUAL_BOTTOM_MARGIN;
-
-            return new Object[]{yPos, currentPageNum};
-        } catch (Exception ex) {
-            // On any parsing error, fallback to a generic visual block height
-            return simulateVisualBlock(yPos, currentPageNum, 120);
-        }
     }
 
 

@@ -37,11 +37,9 @@ import com.pdf.ai.ui.interaction.OnSuggestionClickListener;
 
 public class MainActivity extends AppCompatActivity implements
         OnOutlineActionListener,
-        OnSuggestionClickListener {
+        OnSuggestionClickListener,
+        ChatManager.OnUserMessageSentListener {
 
-    private RecyclerView chatRecyclerView;
-    private MessageAdapter messageAdapter;
-    private List<ChatMessage> chatMessages;
     private EditText messageEditText;
     private LinearLayout sendButton;
     private ImageView settingsIcon;
@@ -55,10 +53,11 @@ public class MainActivity extends AppCompatActivity implements
     private LLMProvider llmProvider;
     private PdfGenerator pdfGenerator;
     private DialogManager dialogManager;
+    private ChatManager chatManager;
+    private PdfGenerationManager pdfGenerationManager;
 
     private OutlineData currentOutlineData;
     private boolean isGeneratingPdf = false;
-    private List<String> currentPdfSectionsContent;
 
     // Executor Service for background tasks
     private ExecutorService executorService;
@@ -77,7 +76,7 @@ public class MainActivity extends AppCompatActivity implements
         selectedProvider = preferencesManager.getSelectedProvider();
         llmProvider = ProviderFactory.create(selectedProvider, selectedModel, geminiApiKey);
 
-        chatRecyclerView = findViewById(R.id.chat_recycler_view);
+        RecyclerView chatRecyclerView = findViewById(R.id.chat_recycler_view);
         messageEditText = findViewById(R.id.message_edit_text);
         sendButton = findViewById(R.id.send_button);
         settingsIcon = findViewById(R.id.settings_icon);
@@ -86,20 +85,23 @@ public class MainActivity extends AppCompatActivity implements
 
         modelNameText.setText(selectedProvider + " • " + selectedModel);
 
-        chatMessages = new ArrayList<>();
-        messageAdapter = new MessageAdapter(this, chatMessages, this, this);
+        List<ChatMessage> chatMessages = new ArrayList<>();
+        MessageAdapter messageAdapter = new MessageAdapter(this, chatMessages, this, this);
         chatRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         chatRecyclerView.setAdapter(messageAdapter);
 
-        loadChatHistory();
+        chatManager = new ChatManager(this, chatRecyclerView, chatMessages, messageAdapter, preferencesManager, this);
+        pdfGenerationManager = new PdfGenerationManager(this, llmProvider, pdfGenerator, chatManager);
+
+        chatManager.loadChatHistory();
         if (chatMessages.isEmpty()) {
-            addWelcomeMessage();
+            chatManager.addWelcomeMessage();
         }
 
         sendButton.setOnClickListener(v -> {
             String message = messageEditText.getText().toString().trim();
             if (!message.isEmpty()) {
-                sendUserMessage(message);
+                chatManager.sendUserMessage(message);
                 messageEditText.setText("");
             }
         });
@@ -126,11 +128,6 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
-    private void addWelcomeMessage() {
-        chatMessages.add(new ChatMessage(ChatMessage.TYPE_SUGGESTIONS, null, null, null));
-        messageAdapter.notifyItemInserted(chatMessages.size() - 1);
-        chatRecyclerView.scrollToPosition(chatMessages.size() - 1);
-    }
 
     private void showApiKeyDialog() {
         dialogManager.showApiKeyDialog(apiKey -> {
@@ -196,41 +193,25 @@ public class MainActivity extends AppCompatActivity implements
         bottomSheetDialog.show();
     }
 
-    private void sendUserMessage(String message) {
-        if (chatMessages.size() == 1 && chatMessages.get(0).getType() == ChatMessage.TYPE_SUGGESTIONS) {
-            chatMessages.remove(0);
-            messageAdapter.notifyItemRemoved(0);
-        }
 
-        chatMessages.add(new ChatMessage(ChatMessage.TYPE_USER, message, null, null));
-        messageAdapter.notifyItemInserted(chatMessages.size() - 1);
-        chatRecyclerView.scrollToPosition(chatMessages.size() - 1);
 
+    @Override
+    public void onUserMessageSent(String message) {
         startOutlineGeneration(message);
     }
 
-    private void showProgressMessage(String status, int progressValue) {
-        if (chatMessages.isEmpty() || chatMessages.get(chatMessages.size() - 1).getType() != ChatMessage.TYPE_PROGRESS) {
-            chatMessages.add(new ChatMessage(ChatMessage.TYPE_PROGRESS, null, status, progressValue, null));
-            messageAdapter.notifyItemInserted(chatMessages.size() - 1);
-        } else {
-            updateProgressMessage(status, progressValue);
-        }
-        chatRecyclerView.scrollToPosition(chatMessages.size() - 1);
-    }
-
     private void startOutlineGeneration(String userPrompt) {
-        showProgressMessage("Sending request...", 0);
+        chatManager.showProgressMessage("Sending request...", 0);
         if ("Gemini".equals(selectedProvider) && (geminiApiKey == null || geminiApiKey.isEmpty())) {
             Toast.makeText(this, "Gemini API Key is not set. Please set it in settings.", Toast.LENGTH_LONG).show();
-            updateProgressMessage("Error: API Key missing.", 0);
+            chatManager.updateProgressMessage("Error: API Key missing.", 0);
             return;
         }
         if (llmProvider == null) {
             llmProvider = ProviderFactory.create(selectedProvider, selectedModel, geminiApiKey);
         }
         if (llmProvider == null) {
-            updateProgressMessage("Provider not configured.", 0);
+            chatManager.updateProgressMessage("Provider not configured.", 0);
             return;
         }
         llmProvider.generateOutline(userPrompt, new LLMProvider.OutlineCallback() {
@@ -238,161 +219,35 @@ public class MainActivity extends AppCompatActivity implements
             public void onSuccess(OutlineData outlineData) {
                 runOnUiThread(() -> {
                     currentOutlineData = outlineData;
-                    removeProgressMessage();
-                    showOutlineInChat(currentOutlineData);
+                    chatManager.removeProgressMessage();
+                    chatManager.showOutlineInChat(outlineData);
+                    chatManager.saveChatHistory();
                 });
             }
 
             @Override
             public void onFailure(String error) {
-                runOnUiThread(() -> updateProgressMessage("Failed to generate outline: " + error, 0));
+                runOnUiThread(() -> chatManager.updateProgressMessage("Failed to generate outline: " + error, 0));
             }
         });
-    }
-
-    private void showOutlineInChat(OutlineData outlineData) {
-        chatMessages.add(new ChatMessage(ChatMessage.TYPE_OUTLINE, null, null, outlineData));
-        messageAdapter.notifyItemInserted(chatMessages.size() - 1);
-        chatRecyclerView.scrollToPosition(chatMessages.size() - 1);
-        saveChatHistory();
-    }
-
-    private void updateProgressMessage(String status, int progressValue) {
-        if (!chatMessages.isEmpty()) {
-            ChatMessage lastMessage = chatMessages.get(chatMessages.size() - 1);
-            if (lastMessage.getType() == ChatMessage.TYPE_PROGRESS) {
-                lastMessage.setProgressStatus(status);
-                lastMessage.setProgressValue(progressValue);
-                messageAdapter.notifyItemChanged(chatMessages.size() - 1);
-                chatRecyclerView.scrollToPosition(chatMessages.size() - 1);
-            }
-        }
-    }
-
-    private void removeProgressMessage() {
-        if (!chatMessages.isEmpty()) {
-            ChatMessage lastMessage = chatMessages.get(chatMessages.size() - 1);
-            if (lastMessage.getType() == ChatMessage.TYPE_PROGRESS) {
-                int removeIndex = chatMessages.size() - 1;
-                chatMessages.remove(removeIndex);
-                messageAdapter.notifyItemRemoved(removeIndex);
-            }
-        }
     }
 
     @Override
     public void onApproveOutline(OutlineData outlineData) {
-        for (int i = chatMessages.size() - 1; i >= 0; i--) {
-            if (chatMessages.get(i).getType() == ChatMessage.TYPE_OUTLINE) {
-                chatMessages.remove(i);
-                messageAdapter.notifyItemRemoved(i);
-                break;
-            }
-        }
+        chatManager.removeOutlineFromChat();
         isGeneratingPdf = true;
-        executorService.execute(() -> startPdfGeneration(outlineData));
-    }
-
-    private void startPdfGeneration(OutlineData approvedOutline) {
-        currentPdfSectionsContent = new ArrayList<>();
-        runOnUiThread(() -> showProgressMessage("Writing content for: " + approvedOutline.getSections().get(0) + " (0%)", 0));
-        generateSectionContent(approvedOutline, 0);
-    }
-
-    private void generateSectionContent(OutlineData outlineData, int sectionIndex) {
-        if (sectionIndex >= outlineData.getSections().size()) {
-            runOnUiThread(() -> {
-                updateProgressMessage("All content generated. Finalizing PDF...", 100);
-            });
-
-            pdfGenerator.createPdf(outlineData.getPdfTitle(), outlineData, currentPdfSectionsContent, new PdfGenerator.PdfGenerationCallback() {
-                @Override
-                public void onPdfGenerated(String pathOrUri, String pdfTitle) {
-                    runOnUiThread(() -> {
-                        removeProgressMessage();
-                        String cleanedTitle = pdfTitle.replace("A comprehensive", "").trim();
-                        Toast.makeText(MainActivity.this, "PDF created successfully", Toast.LENGTH_LONG).show();
-                        chatMessages.add(new ChatMessage(ChatMessage.TYPE_PDF_DOWNLOAD, null, null, null, pathOrUri, cleanedTitle));
-                        messageAdapter.notifyItemInserted(chatMessages.size() - 1);
-                        chatRecyclerView.scrollToPosition(chatMessages.size() - 1);
-                        saveChatHistory();
-                    });
-                }
-
-                @Override
-                public void onPdfGenerationFailed(String error) {
-                    runOnUiThread(() -> {
-                        removeProgressMessage();
-                        Toast.makeText(MainActivity.this, "Error creating PDF: " + error, Toast.LENGTH_LONG).show();
-                    });
-                }
-            });
-            isGeneratingPdf = false;
-            return;
-        }
-
-        String sectionTitle = outlineData.getSections().get(sectionIndex);
-        int totalSections = outlineData.getSections().size();
-        int progress = (int) (((float) sectionIndex / totalSections) * 100);
-
-        runOnUiThread(() -> updateProgressMessage("Writing content for: " + sectionTitle + " (" + progress + "%)", progress));
-
-        if (llmProvider == null) {
-            llmProvider = ProviderFactory.create(selectedProvider, selectedModel, geminiApiKey);
-            if (llmProvider == null) {
-                runOnUiThread(() -> updateProgressMessage("Provider not configured.", progress));
-                isGeneratingPdf = false;
-                return;
-            }
-        }
-
-        llmProvider.generateSectionContent(outlineData.getPdfTitle(), sectionTitle, outlineData.getSections(), sectionIndex, new LLMProvider.SectionCallback() {
-            @Override
-            public void onSuccess(String sectionMarkdown) {
-                runOnUiThread(() -> {
-                    String cleanedContent = MarkdownParser.normalize(sectionMarkdown);
-                    currentPdfSectionsContent.add(cleanedContent);
-                    executorService.execute(() -> generateSectionContent(outlineData, sectionIndex + 1));
-                });
-            }
-
-            @Override
-            public void onFailure(String error) {
-                runOnUiThread(() -> {
-                    updateProgressMessage("Error generating content for " + sectionTitle + ": " + error, progress);
-                    isGeneratingPdf = false;
-                });
-            }
-        });
-    }
-
-    private void saveChatHistory() {
-        preferencesManager.saveChatHistory(chatMessages);
-    }
-
-    private void loadChatHistory() {
-        chatMessages.addAll(preferencesManager.loadChatHistory());
-        messageAdapter.notifyDataSetChanged();
-        if (!chatMessages.isEmpty()) {
-            chatRecyclerView.scrollToPosition(chatMessages.size() - 1);
-        }
+        executorService.execute(() -> pdfGenerationManager.startPdfGeneration(outlineData));
     }
 
     @Override
     public void onDiscardOutline(int position) {
-        if (position != RecyclerView.NO_POSITION) {
-            chatMessages.remove(position);
-            messageAdapter.notifyItemRemoved(position);
-            saveChatHistory();
-        }
+        // This is now handled by the MessageAdapter and ChatManager
     }
-
-    
 
     @Override
     public void onSuggestionClick(String prompt) {
         if (!isGeneratingPdf) {
-            sendUserMessage(prompt);
+            chatManager.sendUserMessage(prompt);
         } else {
             Toast.makeText(this, "Please wait until the current PDF generation is complete.", Toast.LENGTH_SHORT).show();
         }
