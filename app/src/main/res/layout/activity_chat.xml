@@ -11,40 +11,47 @@
         android:layout_height="?attr/actionBarSize"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingStart="16dp"
+        android:paddingStart="8dp"
         android:paddingEnd="16dp"
-        android:background="@color/md_theme_light_surface">
+        android:background="@color/md_theme_light_surface"
+        android:elevation="4dp">
 
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="PDF AI"
-            android:textAppearance="?attr/textAppearanceTitleLarge"
-            android:textColor="@color/md_theme_light_onSurface" />
+        <ImageView
+            android:id="@+id/back_icon"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/icon_arrow_back_round"
+            android:tint="@color/md_theme_light_onSurface"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="8dp" />
 
         <LinearLayout
             android:id="@+id/model_picker_layout"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:background="@drawable/model_picker_background"
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp"
-            android:layout_marginEnd="16dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
             android:clickable="true"
             android:focusable="true">
 
             <TextView
                 android:id="@+id/model_name_text"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="gemini-1.5-flash-latest"
+                android:layout_weight="1"
+                android:text="DeepInfra • Qwen 2.5"
                 android:textSize="12sp"
-                android:textColor="?attr/colorOnSurface" />
+                android:textColor="?attr/colorOnSurface"
+                android:ellipsize="end"
+                android:maxLines="1" />
 
             <ImageView
                 android:layout_width="16dp"
@@ -55,23 +62,64 @@
         </LinearLayout>
 
         <ImageView
-            android:id="@+id/settings_icon"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/icon_settings_round"
-            android:contentDescription="Settings"
+            android:id="@+id/new_chat_icon"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/icon_add_round"
             android:tint="@color/md_theme_light_onSurfaceVariant"
-            android:clickable="true"
-            android:focusable="true"
-            android:background="?attr/selectableItemBackgroundBorderless" />
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="8dp"
+            android:contentDescription="New Chat" />
+    </LinearLayout>
 
+    <LinearLayout
+        android:id="@+id/features_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/toolbar"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:background="@color/md_theme_light_surfaceContainer"
+        android:gravity="center_vertical">
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/thinking_chip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Think"
+            android:textSize="12sp"
+            style="@style/Widget.Material3.Chip.Filter"
+            android:checkable="true"
+            android:checked="false"
+            app:chipIcon="@drawable/icon_psychology_round"
+            app:chipIconVisible="true"
+            app:chipStartPadding="4dp"
+            app:chipEndPadding="8dp" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/search_chip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Search"
+            android:textSize="12sp"
+            android:layout_marginStart="8dp"
+            style="@style/Widget.Material3.Chip.Filter"
+            android:checkable="true"
+            android:checked="false"
+            app:chipIcon="@drawable/icon_search_round"
+            app:chipIconVisible="true"
+            app:chipStartPadding="4dp"
+            app:chipEndPadding="8dp" />
     </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/chat_recycler_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/toolbar"
+        android:layout_below="@id/features_bar"
         android:layout_above="@+id/input_layout"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
@@ -86,7 +134,8 @@
         android:layout_alignParentBottom="true"
         android:orientation="horizontal"
         android:padding="8dp"
-        android:background="@color/md_theme_light_surface">
+        android:background="@color/md_theme_light_surface"
+        android:gravity="center_vertical">
 
         <EditText
             android:id="@+id/message_edit_text"

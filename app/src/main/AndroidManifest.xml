@@ -7,10 +7,9 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".MainActivity"
+            android:name=".HomeActivity"
             android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout"
             android:hardwareAccelerated="true"
-            android:supportsPictureInPicture="true"
             android:screenOrientation="portrait"
             android:exported="true">
             <intent-filter>
@@ -19,15 +18,16 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".ChatActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout"
+            android:hardwareAccelerated="true"
+            android:screenOrientation="portrait"
+            android:exported="false" />
+        <activity
             android:name=".SettingsActivity"
             android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout"
             android:hardwareAccelerated="true"
-            android:supportsPictureInPicture="true"
             android:screenOrientation="portrait" />
-        <activity
-            android:name=".DebugActivity"
-            android:screenOrientation="portrait"
-            android:theme="@style/AppTheme.DebugActivity" />
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="com.pdf.ai.androidx-startup"
