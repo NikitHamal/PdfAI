@@ -21,7 +21,6 @@ import com.pdf.ai.manager.ModelsManager;
 import com.pdf.ai.model.Conversation;
 import com.pdf.ai.model.ConversationMessage;
 import com.pdf.ai.model.LLMModel;
-import com.pdf.ai.model.OutlineData;
 import com.pdf.ai.provider.LLMProvider;
 import com.pdf.ai.provider.ProviderFactory;
 import com.pdf.ai.ui.interaction.OnOutlineActionListener;
